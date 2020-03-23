@@ -4,25 +4,20 @@ import cartopy.crs as ccrs
 import numpy as np
 
 def concentration_plot(ds, species, model_names, rows, 
-                       columns, figsize, levels,season, 
+                       columns, figsize, levels,
+                       season, cmap,shrink_cbar,
                        lat_lon, extension = 'max'):
     fig = plt.figure(figsize=figsize)
-    cmap_dif = 'BrBG_r'
-    cmap_conc = 'pink_r'
     for idx_m, model in enumerate(model_names):
             ####### plot our first day of NOx ######
             ax = fig.add_subplot(rows,columns,idx_m+1, projection=ccrs.PlateCarree())
-            #set levels based on our dictionary
-            if model == 'dif':
-                cmap = cmap_dif
-            else:
-                cmap = cmap_conc
+        
             #make the plot
             ds[f'{model}_{species}'].groupby('time.season').mean(dim = 'time').sel(season = season).plot(ax=ax, #set the axis
                                     levels = np.squeeze(levels), #set the levels for our colorbars
                                    extend=extension,#extend the colorbar in both directions
                                    transform=ccrs.PlateCarree(), #fit data into map
-                                   cbar_kwargs={'label':ds[f'{model}_{species}'].attrs['units'],'shrink':.3}, #label our colorbar
+                                   cbar_kwargs={'label':ds[f'{model}_{species}'].attrs['units'],'shrink':shrink_cbar}, #label our colorbar
                                     cmap=cmap)  #choose color for our colorbar
             
             ax.add_feature(cfeat.STATES)
@@ -35,11 +30,11 @@ def concentration_plot(ds, species, model_names, rows,
     
 #define a plot for observations and model
 def obs_model_plot(ds, df, species,model_names, 
-                   vmin, vmax, rows, columns, cmap,figsize, season,
+                   vmin, vmax, rows, columns, cmap, figsize, season,
                    lat_lon, lat_spacing=47,lon_spacing=73 
                    ):
     fig = plt.figure(figsize=figsize)
-    species_dict = {'PM25':'PM2.5 - Local Conditions', 'SO2':'Sulfur Dioxide', 'NO2':'Nitrogen dioxide (NO2)', 'O3':'Ozone', 'NOx':'Nitrogen Oxides (NO2+NO)'}
+    species_dict = {'PM25':'PM2.5 - Local Conditions', 'SO2':'Sulfur dioxide', 'NO2':'Nitrogen dioxide (NO2)', 'O3':'Ozone', 'NOx':'Nitrogen Oxides (NO2+NO)'}
 
     for idx, model in enumerate(model_names):
         ###### Create axes ######
@@ -66,3 +61,66 @@ def obs_model_plot(ds, df, species,model_names,
         #adjust lat&lon being mapped
         ax.set_extent(lat_lon)
         plt.title(f'{model} {species}'); #title
+        
+def EPA_interp_dif_plot(df, species, model_names, difference_parameter,
+                       vmin, vmax, rows, columns, cmap, figsize, 
+                        lat_lon):
+    fig = plt.figure(figsize=figsize)
+    species_dict = {'PM25':'PM2.5 - Local Conditions', 'SO2':'Sulfur dioxide', 'NO2':'Nitrogen dioxide (NO2)', 'O3':'Ozone', 'NOx':'Nitrogen Oxides (NO2+NO)'}
+    for idx, model in enumerate(model_names):
+        ###### Create axes ######
+        ax=fig.add_subplot(rows,columns, idx +1, projection=ccrs.PlateCarree())
+        ax.coastlines()
+        ax.add_feature(cfeat.STATES)
+        
+        ##### select lon and lat #####
+        lat=df['Latitude'].loc[
+            (df['model'] == model) 
+            & (df['species'] == species_dict[species])
+        ].unique()
+        lon=df['Longitude'].loc[
+            (df['model'] == model) 
+            & (df['species'] == species_dict[species])
+        ].unique()
+        
+        ##### Define the Concentrations #####
+        conc = df.loc[
+            (df['model'] == model) 
+            & (df['species'] == species_dict[species])
+        ].groupby(['Latitude','Longitude']).mean()[difference_parameter]
+
+        ##### Colorbar Parameters #####
+        PCM=ax.scatter(lon, lat,c=conc,transform=ccrs.PlateCarree(),
+                       cmap=cmap,edgecolors='k', linewidth = .3, vmin = vmin, vmax = vmax)
+        plt.colorbar(PCM, ax=ax,extend='both') 
+        
+        ##### Adjustments and Labels #####
+        ax.set_extent(lat_lon)
+        plt.title(f'{difference_parameter} {species}')
+
+        
+def loc_mean_plot(df, species_list, model_names, subset, 
+                  percent_dif):
+    species_dict = {'PM25':'PM2.5 - Local Conditions', 'SO2':'Sulfur dioxide', 'NO2':'Nitrogen dioxide (NO2)', 'O3':'Ozone', 'NOx':'Nitrogen Oxides (NO2+NO)'}
+    for species in species_list:
+        fig = plt.figure(figsize = [20,5])
+        for model in model_names:
+            #plot anything greater than our percent_dif we input
+            if subset == True:
+                plt.plot(df.loc[
+                    np.abs(df['GC-EPA Daily Mean Percent Difference']) > percent_dif
+                ].loc[species_dict[species],model].index.values,
+                         df.loc[
+                             np.abs(df['GC-EPA Daily Mean Percent Difference']) > percent_dif
+                         ].loc[species_dict[species],model]['GC-EPA Daily Mean Percent Difference'], 'o',
+                        label = {model})
+                plt.xticks(rotation = 45, fontsize = 8);
+            #plot all percent differences
+            else:
+                plt.plot(df.loc[species_dict[species],model].index.values,
+                     df.loc[species_dict[species],model]['GC-EPA Daily Mean Percent Difference'], '.',
+                    label = {model})
+                plt.xticks(rotation = 45, fontsize = 3);
+            plt.xlabel('Station')
+            plt.ylabel('% Difference')
+            plt.title(f'{species} Average % Difference between Models and EPA Observations')
