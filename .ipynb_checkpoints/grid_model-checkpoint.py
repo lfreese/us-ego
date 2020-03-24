@@ -26,11 +26,34 @@ def concentration_plot(ds, species, model_names, rows,
             plt.title(f'{model} {species}'); #title
     #plt.suptitle(species_dict[species], fontsize = 24)
     #plt.subplots_adjust(bottom=0, top=.5)
+def ratio_plot(ds, species, model_names, rows, 
+                       columns, figsize, levels,
+                       season, cmap,shrink_cbar,
+                       lat_lon, extension = 'max'):
+    fig = plt.figure(figsize=figsize)
+    for idx_m, model in enumerate(model_names):
+            ####### plot our first day of NOx ######
+            ax = fig.add_subplot(rows,columns,idx_m+1, projection=ccrs.PlateCarree())
+        
+            #make the plot
+            ds[f'{model}_{species}'].groupby('time.season').mean(dim = 'time').sel(season = season).plot(ax=ax, #set the axis
+                                    levels = np.squeeze(levels), #set the levels for our colorbars
+                                   extend=extension,#extend the colorbar in both directions
+                                   transform=ccrs.PlateCarree(), #fit data into map
+                                   cbar_kwargs={'label':ds[f'{model}_{species}'].attrs['units'],'shrink':shrink_cbar,'spacing':'uniform'}, #label our colorbar
+                                    cmap=cmap)  #choose color for our colorbar
+            
+            ax.add_feature(cfeat.STATES)
+            ax.coastlines() #add coastlines
+            ax.set_extent(lat_lon) #set a limit on the plot lat and lon
+            plt.title(f'{model} {species}'); #title
+    #plt.suptitle(species_dict[species], fontsize = 24)
+    #plt.subplots_adjust(bottom=0, top=.5)
     
     
 #define a plot for observations and model
 def obs_model_plot(ds, df, species,model_names, 
-                   vmin, vmax, rows, columns, cmap, figsize, season,
+                   vmin, vmax, rows, columns, cmap, figsize, month,
                    lat_lon, lat_spacing=47,lon_spacing=73 
                    ):
     fig = plt.figure(figsize=figsize)
@@ -44,7 +67,7 @@ def obs_model_plot(ds, df, species,model_names,
         
         ####### GEOS-CHEM output #######
         #PCM parameters and plot for model
-        PCM_m=ax.pcolormesh(ds['lon'], ds['lat'], ds.groupby('time.season').mean(dim = 'time').sel(season = season)[f'{model}_{species}'], 
+        PCM_m=ax.pcolormesh(ds['lon'], ds['lat'], ds.groupby('time.month').mean(dim = 'time').sel(month = month)[f'{model}_{species}'], 
                             cmap=cmap,vmin=vmin, vmax=vmax)
     
         ###### observations #######
