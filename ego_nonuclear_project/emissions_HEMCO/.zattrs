@@ -1,0 +1,8 @@
+{
+    "contact": "GEOS-Chem Support Team (geos-chem-support@as.harvard.edu)",
+    "conventions": "COARDS",
+    "format": "NetCDF-4",
+    "history": "Created by routine NC_CREATE (in ncdf_mod.F90)",
+    "reference": "http://wiki.geos-chem.org/The_HEMCO_Users_Guide",
+    "title": "./OutputDir/HEMCO  diagnostics"
+}

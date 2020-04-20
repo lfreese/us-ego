@@ -1,0 +1,251 @@
+import matplotlib.pyplot as plt
+import cartopy.feature as cfeat
+import cartopy.crs as ccrs
+import numpy as np
+import utils
+from matplotlib.lines import Line2D
+
+
+import sys
+sys.path.append('/model_validation')
+species_dict = utils.species_dict
+
+levels_dict = {'PM25':np.arange(0., 40., .5), 'SO2':np.arange(0., 5., .1), 
+               'NO2':np.arange(0., 5., .1), 'NOx':np.arange(0., 10., .1), 'O3':np.arange(0., 45., 1.),
+               'dif':np.arange(-1., 1.01, .01), 'regional_dif':np.arange(-1.5, 1.51, .01), 'regional_dif_tight':np.arange(-.3, .31, .01),
+              'percent_dif_full':np.arange(-100, 101, 1), 'percent_dif_tight':np.arange(-10,10.1,.1)}
+
+
+def concentration_plot_annual(ds, species_names, model_names, rows, 
+                       columns, figsize, levels,
+                     cmap,shrink_cbar,
+                       lat_lon, extension = 'max'):
+    fig, axes =  plt.subplots(len(species), len(model_names), figsize=figsize,subplot_kw={'projection':ccrs.PlateCarree()})
+    for idx_m, model in enumerate(model_names):
+        for idx_s, species in enumerate(species_names):
+            ax = axes[idx_s,idx_m]        
+            #make the plot
+            ds[f'{species}'].sel(model_name = model).mean(dim = 'time').plot(ax=ax, #set the axis
+                                   levels = np.squeeze(levels_dict[species]), #set the levels for our colorbars
+                                   extend=extension,#extend the colorbar in both directions
+                                   transform=ccrs.PlateCarree(), #fit data into map
+                                   cbar_kwargs={'label':ds.sel(model_name = model)[f'{species}'].attrs['units'],'shrink':shrink_cbar}, #label our colorbar
+                                    cmap=cmap)  #choose color for our colorbar
+            
+            ax.add_feature(cfeat.STATES)
+            ax.coastlines() #add coastlines
+            ax.set_extent(lat_lon) #set a limit on the plot lat and lon
+            ax.set_title(f'{model} {species}', fontsize = 16); #title
+    plt.tight_layout()
+
+def concentration_plot_seasonal(ds, species_names, season, model_names, figsize,
+                       cmap,shrink_cbar,
+                       lat_lon, extension = 'max'):
+    fig, axes =  plt.subplots(len(species_names), len(model_names), figsize=figsize,subplot_kw={'projection':ccrs.PlateCarree()})
+    for idx_m, model in enumerate(model_names):
+        for idx_s, species in enumerate(species_names):
+            ax = axes[idx_s,idx_m]        
+            #make the plot
+            ds[f'{species}'].groupby('time.season').mean().sel(model_name = model, season = season).plot(ax=ax, #set the axis
+                                   levels = np.squeeze(levels_dict[species]), #set the levels for our colorbars
+                                   extend=extension,#extend the colorbar in both directions
+                                   transform=ccrs.PlateCarree(), #fit data into map
+                                   cbar_kwargs={'label':ds.sel(model_name = model)[f'{species}'].attrs['units'],'shrink':shrink_cbar}, #label our colorbar
+                                    cmap=cmap)  #choose color for our colorbar
+            
+            ax.add_feature(cfeat.STATES)
+            ax.coastlines() #add coastlines
+            ax.set_extent(lat_lon) #set a limit on the plot lat and lon
+            ax.set_title(f'{model} {species}', fontsize = 16); #title
+
+def concentration_plot_seasonal_dif(ds, species, season, rows, 
+                       columns, figsize, levels,
+                     cmap,shrink_cbar,
+                       lat_lon, extension = 'both'):
+    fig = plt.figure(figsize=figsize)
+    
+    for idx_s, species in enumerate(species):
+
+        ax = fig.add_subplot(rows,columns, idx_s+1, projection=ccrs.PlateCarree())
+        
+    #make the plot
+        ds[f'dif_{species}'].groupby('time.season').mean().sel(season = season).plot(ax=ax, #set the axis
+                                   levels = np.squeeze(levels), #set the levels for our colorbars
+                                   extend=extension,#extend the colorbar in both directions
+                                   transform=ccrs.PlateCarree(), #fit data into map
+                                   cbar_kwargs={'label':ds[f'{species}'].attrs['units'],'shrink':shrink_cbar}, #label our colorbar
+                                    cmap=cmap)  #choose color for our colorbar
+            
+        ax.add_feature(cfeat.STATES)
+        ax.coastlines() #add coastlines
+        ax.set_extent(lat_lon) #set a limit on the plot lat and lon
+        plt.title(f'{species}', fontsize = 16); #title
+
+
+def ratio_plot(ds, species, model_names, rows, 
+                       columns, figsize, levels,
+                       season, cmap,shrink_cbar,
+                       lat_lon, extension = 'max'):
+    fig = plt.figure(figsize=figsize)
+    for idx_m, model in enumerate(model_names):
+            ax = fig.add_subplot(rows,columns,idx_m+1, projection=ccrs.PlateCarree())
+        
+            #make the plot
+            ds[f'{species}'].groupby('time.season').mean(dim = 'time').sel(model_name = model, season = season).plot(ax=ax, #set the axis
+                                    levels = np.squeeze(levels), #set the levels for our colorbars
+                                   extend=extension,#extend the colorbar in both directions
+                                   transform=ccrs.PlateCarree(), #fit data into map
+                                   cbar_kwargs={'label':r'$\frac{CH_2O}{NO_2}$ ratio','shrink':shrink_cbar,'spacing':'uniform'}, #label our colorbar
+                                    cmap=cmap)  #choose color for our colorbar
+            
+            ax.add_feature(cfeat.STATES)
+            ax.coastlines() #add coastlines
+            ax.set_extent(lat_lon) #set a limit on the plot lat and lon
+            plt.title(f'{model} {species}'); #title
+    #plt.suptitle(species_dict[species], fontsize = 24)
+    #plt.subplots_adjust(bottom=0, top=.5)
+    
+    
+#define a plot for observations and model
+def obs_model_plot(ds, df, species,model_names, 
+                   vmin, vmax, rows, columns, cmap, figsize, month,
+                   lat_lon, lat_spacing=47,lon_spacing=73 
+                   ):
+    fig = plt.figure(figsize=figsize)
+
+    for idx, model in enumerate(model_names):
+        ###### Create axes ######
+        ax=fig.add_subplot(rows,columns, idx +1, projection=ccrs.PlateCarree())
+        ax.coastlines()
+        ax.add_feature(cfeat.STATES)
+        
+        ####### GEOS-CHEM output #######
+        #PCM parameters and plot for model
+        PCM_m=ax.pcolormesh(ds.sel(model_name = model)['lon'], ds.sel(model_name = model)['lat'], ds.sel(model_name = model).mean(dim = 'time')[f'{species}'], 
+                            cmap=cmap,vmin=vmin, vmax=vmax)
+    
+        ###### observations #######
+        #create lat and lon for observations
+        lat_o = df.loc[df['species'] == species_dict[species]]['Latitude'].unique()
+        lon_o = df.loc[df['species'] == species_dict[species]]['Longitude'].unique()
+        #define the concentrations for observations
+        mean_conc=df.loc[(df['species'] == species_dict[species])].groupby(['Latitude', 'Longitude']).mean()['Arithmetic Mean']
+        #PCM parameters and plot for observations
+        PCM_o=ax.scatter(lon_o, lat_o, c=mean_conc, transform=ccrs.PlateCarree(),cmap=cmap,edgecolors='k',linewidth=.3,vmin=vmin, vmax=vmax)
+        plt.colorbar(PCM_o, ax=ax,extend='max', shrink=.3) 
+
+        ###### adjustments and labels ########
+        #adjust lat&lon being mapped
+        ax.set_extent(lat_lon)
+        plt.title(f'{model} {species}'); #title
+        
+
+
+        
+def loc_mean_plot(df, species_list, model_names, subset, 
+                  percent_dif):
+    species_dict = {'PM25':'PM2.5 - Local Conditions', 'SO2':'Sulfur dioxide', 'NO2':'Nitrogen dioxide (NO2)', 'O3':'Ozone', 'NOx':'Nitrogen Oxides (NO2+NO)'}
+    for species in species_list:
+        fig = plt.figure(figsize = [20,5])
+        for model in model_names:
+            #plot anything greater than our percent_dif we input
+            if subset == True:
+                plt.plot(df.loc[
+                    np.abs(df['GC-EPA Daily Mean Percent Difference']) > percent_dif
+                ].loc[species_dict[species],model].index.values,
+                         df.loc[
+                             np.abs(df['GC-EPA Daily Mean Percent Difference']) > percent_dif
+                         ].loc[species_dict[species],model]['GC-EPA Daily Mean Percent Difference'], 'o',
+                        label = {model})
+                plt.xticks(rotation = 45, fontsize = 8);
+            #plot all percent differences
+            else:
+                plt.plot(df.loc[species_dict[species],model].index.values,
+                     df.loc[species_dict[species],model]['GC-EPA Daily Mean Percent Difference'], '.',
+                    label = {model})
+                plt.xticks(rotation = 45, fontsize = 3);
+            plt.xlabel('Station')
+            plt.ylabel('% Difference')
+            plt.title(f'{species} Average % Difference between Models and EPA Observations')
+            
+def interp_scatterplot(interp_df, obs_df, lin_regress_df, model_names, month_string, colors_dict):
+    fig, axes = plt.subplots(4,3,figsize = [9,12])
+    for idx_s, species in enumerate(['PM25', 'SO2', 'NO2', 'O3']):
+        for idx_m, model in enumerate(model_names):
+            ax = axes[idx_s,idx_m]
+            x = obs_df.loc[(obs_df['species'] == species_dict[species])].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean']
+            y = interp_df.loc[(interp_df['model'] == model) & (interp_df['species'] == species_dict[species])].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean']
+            #abline = lin_regress_df.loc[(lin_regress_df['model'] == model) & (lin_regress_df['species'] == species)]['slope'].values * x + lin_regress_df.loc[(lin_regress_df['model'] == model) & (lin_regress_df['species'] == species)]['intercept'].values
+            ax.scatter(x, y, c = colors_dict[model], marker = '.')
+            ax.plot(x, x + 0, 'xkcd:grey', label = '1:1 Line')
+            #ax.plot(x,abline,'xkcd:almost black' , label = 'Linear Regression')
+            ax.set_xlabel('EPA Annual Mean')
+            ax.set_ylabel('GC Annual Mean')
+            ax.set_xlim([-1,x.max()+1])
+            ax.set_ylim([-1,x.max()+1])
+            r_val = np.round(lin_regress_df.loc[(lin_regress_df['species'] == species) & (lin_regress_df['model'] == model), 'rvalue'].values[0], 2)
+            std_err = np.round(lin_regress_df.loc[(lin_regress_df['species'] == species) & (lin_regress_df['model'] == model), 'stderr'].values[0], 2)
+            ax.set_title(f'{species} {model} \n R-value: {r_val} \n Standard error: {std_err}')
+            #ax.legend()
+    custom_lines = [Line2D([0], [0], color='xkcd:grey', lw=4),
+                Line2D([0], [0], color='xkcd:almost black', lw=4)]
+    plt.legend(custom_lines, ['1:1 Line', 'Linear Regression'])
+    plt.tight_layout()
+
+    
+def hist_obs_interp(df, model_names, colors_dict, bins):
+    fig, axes = plt.subplots(4,3,figsize = [9,12])
+    for idx_s, species in enumerate(['PM25', 'SO2', 'NO2', 'O3']):
+        for idx_m, model in enumerate(model_names):
+            ax = axes[idx_s,idx_m]
+            n, bins, patches = ax.hist(df[species][model], bins, color = colors_dict[model])
+            ax.set_title(f'{species} {model} EPA Observations - \n Interpolated GEOS-Chem Data')
+    plt.tight_layout()
+    
+
+def monthly_mean(ds, species, levels):
+    fig = plt.figure(figsize=[24,18])
+    for idx, m in enumerate(range(1,13)):
+        ax = fig.add_subplot(4,3,idx+1,projection=ccrs.PlateCarree())
+        ds[f'monthly_mean_{species}'].sel(month = m).plot(ax=ax, #set the axis
+                                        levels = np.squeeze(levels), #set the levels for our colorbars
+                                       extend='max',#extend the colorbar in both directions
+                                       transform=ccrs.PlateCarree(), #fit data into map
+                                       cbar_kwargs={'label':ds[f'monthly_mean_{species}'].attrs['units'],'shrink':.8}, #label our colorbar
+                                        cmap='pink_r')  #choose color for our colorbar
+
+        ax.add_feature(cfeat.STATES)
+        ax.coastlines() #add coastlines
+        ax.set_extent(utils.lat_lon_dict['US_lat_lon']) #set a limit on the plot lat and lon)
+        plt.title(f'{species} in {m}')
+        
+        
+def plot_emissions(ds, emission, season, levels):
+    fig = plt.figure(figsize = [12,9])
+    ax = fig.add_subplot(projection=ccrs.PlateCarree())
+    ds[emission].groupby('time.season').mean().sel(season = season).plot(ax=ax, #set the axis
+                                           levels = np.squeeze(levels), #set the levels for our colorbars
+                                           extend='max',#extend the colorbar in both directions
+                                          transform=ccrs.PlateCarree(), #fit data into map
+                                           cbar_kwargs={'label':ds[f'{emission}'].attrs['units'],'shrink':.8}, #label our colorbar
+                                            cmap='pink_r')  #choose color for our colorbar
+
+    ax.add_feature(cfeat.STATES)
+    ax.coastlines() #add coastlines
+    ax.set_extent(utils.lat_lon_dict['US_lat_lon']) #set a limit on the plot lat and lon)
+
+def plot_emissions_dif(ds1, ds2, emission, season, levels, lat_lon, figsize):
+    fig = plt.figure(figsize = figsize)
+    ax = fig.add_subplot(projection=ccrs.PlateCarree())
+    (ds1[emission].groupby('time.season').mean().sel(season = season) - ds2[emission].groupby('time.season').mean().sel(season = season)).plot(
+                                        ax=ax, #set the axis
+                                           levels = np.squeeze(levels), #set the levels for our colorbars
+                                           extend='both',#extend the colorbar in both directions
+                                          transform=ccrs.PlateCarree(), #fit data into map
+                                           cbar_kwargs={'label':ds1[f'{emission}'].attrs['units'],'shrink':.8}, #label our colorbar
+                                            cmap='BrBG_r' #choose color for our colorbar
+    )  
+
+    ax.add_feature(cfeat.STATES)
+    ax.coastlines() #add coastlines
+    ax.set_extent(lat_lon) #set a limit on the plot lat and lon)

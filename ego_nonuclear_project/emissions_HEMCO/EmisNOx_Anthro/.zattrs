@@ -1,0 +1,10 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "model_name",
+        "time",
+        "lat",
+        "lon"
+    ],
+    "coordinates": "lev",
+    "units": "kg/m2/s"
+}

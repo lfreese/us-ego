@@ -1,0 +1,12 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "model_name",
+        "time",
+        "lat",
+        "lon"
+    ],
+    "averaging_method": "mean",
+    "coordinates": "lev",
+    "long_name": "NH3_emission_flux_from_all_sectors",
+    "units": "kg/m2/s"
+}

@@ -1,0 +1,12 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "model_name",
+        "time",
+        "lat",
+        "lon"
+    ],
+    "averaging_method": "mean",
+    "coordinates": "lev",
+    "long_name": "SO2_emission_flux_from_anthropogenic",
+    "units": "kg/m2/s"
+}
