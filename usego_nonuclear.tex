@@ -86,7 +86,7 @@ We run four GEOS-Chem simulations with different U.S. EGU emission inputs: defau
 
 \begin{figure}
     \centering
-    \includegraphics[scale=0.4]{}
+    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/plants_normal.png}
     \caption{Spatial maps of coal, nuclear and natural gas power plants across the U.S.} 
     \label{fig:plants}
 \end{figure}
@@ -103,16 +103,11 @@ From this, we can have confidence that our model
 
 \begin{figure}
     \centering
-    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/summer_national_dif.png}
+    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/summer_winter_national_dif.png}
     \caption{Spatial maps of summer (JJA) concentration differences between scenarios (no nuclear - normal). We see the largest differences in \ce{NO_x} and \ce{SO_2} concentrations in the Northeast, leading to large differences in \ce{PM_{2.5}} and ozone in the region as well.} 
-    \label{fig:summer_dif}
+    \label{fig:summer_winter_dif}
 \end{figure}
-\begin{figure}
-    \centering
-    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/winter_national_dif.png}
-    \caption{Spatial maps of winter (DJF) concentration differences between scenarios (no nuclear - normal). We see the largest differences in \ce{NO_x} and \ce{SO_2} concentrations in the Northeast, leading to large differences in \ce{PM_{2.5}} as well. Winter ozone levels are not included.} 
-    \label{fig:winter_dif}
-\end{figure}
+
 
 Here we look at the differences between the no nuclear and normal scenarios in the summer, June, July and August (JJA) and winter, December, January, February seasons (DJF). 
 
@@ -121,19 +116,6 @@ Differences between the two scenarios in \ce{SO2} and \ce{NOx} concentrations ar
 There are overall increases in both summertime and wintertime \ce{PM_{2.5}} concentrations across the United States when nuclear power plants are shut down, with changes of up to 10 $\mu g/m^3$ occurring in June in the eastern Missouri. Increases in \ce{PM_{2.5}} during the summer time are an average of .04 $\mu g/m^3$ greater than during the winter. Particularly, in the central-western Pennsylvania, the summer time \ce{PM_{2.5}} difference is up to 1.2 $\mu g/m^3$ greater than that in the winter. 
 
 Summertime ozone, on the other hand, decreases largely throughout the Northeast, with slight increases in the Southeast and western Midwest regions. Maximum ozone increases occur along the South Carolina-Georgia border with increases of 1.7 ppb. Decreases are largest in the Northeast, particularly along the Pennsylvania-Ohio border, decreasing by up to 21.8 ppb. 
-
-\begin{figure}
-    \centering
-    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/}
-    \caption{Spatial maps of summer (JJA) concentration differences between scenarios (no nuclear - normal). We see the largest differences in \ce{NO_x} and \ce{SO_2} concentrations in the Northeast, leading to large differences in \ce{PM_{2.5}} and ozone in the region as well.} 
-    \label{fig:summer_winter_dif}
-\end{figure}
-\begin{figure}
-    \centering
-    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/winter_national_dif.png}
-    \caption{Spatial maps of winter (DJF) concentration differences between scenarios (no nuclear - normal). We see the largest differences in \ce{NO_x} and \ce{SO_2} concentrations in the Northeast, leading to large differences in \ce{PM_{2.5}} as well. Winter ozone levels are not included.} 
-    \label{fig:winter_dif}
-\end{figure}
 
 \subsection{Ozone and \ce{PM_{2.5}} Sensitivities}
 As GEOS-Chem has a high nitrate bias in the Northest, we expect this to impact our ozone and \ce{PM_{2.5}} concentrations in both scenarios; here we discuss the implications of the bias that we previously described, and explain its role in this work. 
