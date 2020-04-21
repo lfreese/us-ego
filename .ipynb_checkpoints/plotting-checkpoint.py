@@ -15,6 +15,8 @@ levels_dict = {'PM25':np.arange(0., 40., .5), 'SO2':np.arange(0., 5., .1),
                'dif':np.arange(-1., 1.01, .01), 'regional_dif':np.arange(-1.5, 1.51, .01), 'regional_dif_tight':np.arange(-.3, .31, .01),
               'percent_dif_full':np.arange(-100, 101, 1), 'percent_dif_tight':np.arange(-10,10.1,.1)}
 
+proper_names_dict = {'PM25':r'$PM_{2.5} (\mu g/m^3)$', 'NOx':r'$NO_x (ppbv)$', 'SO2':r'$SO_2 (ppbv)$','O3':r'$O_3 (ppbv)$'}
+
 
 def concentration_plot_annual(ds, species_names, model_names, rows, 
                        columns, figsize, levels,
@@ -60,7 +62,7 @@ def concentration_plot_seasonal(ds, species_names, season, model_names, figsize,
 
 def concentration_plot_seasonal_dif(ds, species, season, rows, 
                        columns, figsize, levels,
-                     cmap,shrink_cbar,
+                     cmap,
                        lat_lon, extension = 'both'):
     fig = plt.figure(figsize=figsize)
     
@@ -69,18 +71,21 @@ def concentration_plot_seasonal_dif(ds, species, season, rows,
         ax = fig.add_subplot(rows,columns, idx_s+1, projection=ccrs.PlateCarree())
         
     #make the plot
-        ds[f'dif_{species}'].groupby('time.season').mean().sel(season = season).plot(ax=ax, #set the axis
+        q = ds[f'dif_{species}'].groupby('time.season').mean().sel(season = season).plot(ax=ax, #set the axis
                                    levels = np.squeeze(levels), #set the levels for our colorbars
                                    extend=extension,#extend the colorbar in both directions
                                    transform=ccrs.PlateCarree(), #fit data into map
-                                   cbar_kwargs={'label':ds[f'{species}'].attrs['units'],'shrink':shrink_cbar}, #label our colorbar
-                                    cmap=cmap)  #choose color for our colorbar
+                                    cmap=cmap, add_colorbar = False)  #choose color for our colorbar
             
         ax.add_feature(cfeat.STATES)
         ax.coastlines() #add coastlines
         ax.set_extent(lat_lon) #set a limit on the plot lat and lon
-        plt.title(f'{species}', fontsize = 16); #title
-
+        plt.title(proper_names_dict[species], fontsize = 16); #title
+        
+    fig.subplots_adjust(right=0.8)
+    # put colorbar at desire position
+    cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
+    fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
 
 def ratio_plot(ds, species, model_names, rows, 
                        columns, figsize, levels,
@@ -91,19 +96,22 @@ def ratio_plot(ds, species, model_names, rows,
             ax = fig.add_subplot(rows,columns,idx_m+1, projection=ccrs.PlateCarree())
         
             #make the plot
-            ds[f'{species}'].groupby('time.season').mean(dim = 'time').sel(model_name = model, season = season).plot(ax=ax, #set the axis
+            q = ds[f'{species}'].groupby('time.season').mean(dim = 'time').sel(model_name = model, season = season).plot(ax=ax, #set the axis
                                     levels = np.squeeze(levels), #set the levels for our colorbars
                                    extend=extension,#extend the colorbar in both directions
                                    transform=ccrs.PlateCarree(), #fit data into map
-                                   cbar_kwargs={'label':r'$\frac{CH_2O}{NO_2}$ ratio','shrink':shrink_cbar,'spacing':'uniform'}, #label our colorbar
-                                    cmap=cmap)  #choose color for our colorbar
+                                    cmap=cmap, add_colorbar = False)  #choose color for our colorbar
             
             ax.add_feature(cfeat.STATES)
             ax.coastlines() #add coastlines
             ax.set_extent(lat_lon) #set a limit on the plot lat and lon
-            plt.title(f'{model} {species}'); #title
-    #plt.suptitle(species_dict[species], fontsize = 24)
-    #plt.subplots_adjust(bottom=0, top=.5)
+            plt.title(f' '); #title
+    
+    fig.subplots_adjust(right=0.8)
+    # put colorbar at desire position
+    cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
+    fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
+    cbar_ax.set_xlabel(r'$\frac{CH_2O}{NO_2}$ ratio', fontsize = 14)
     
     
 #define a plot for observations and model
@@ -234,18 +242,30 @@ def plot_emissions(ds, emission, season, levels):
     ax.coastlines() #add coastlines
     ax.set_extent(utils.lat_lon_dict['US_lat_lon']) #set a limit on the plot lat and lon)
 
-def plot_emissions_dif(ds1, ds2, emission, season, levels, lat_lon, figsize):
-    fig = plt.figure(figsize = figsize)
-    ax = fig.add_subplot(projection=ccrs.PlateCarree())
-    (ds1[emission].groupby('time.season').mean().sel(season = season) - ds2[emission].groupby('time.season').mean().sel(season = season)).plot(
-                                        ax=ax, #set the axis
-                                           levels = np.squeeze(levels), #set the levels for our colorbars
-                                           extend='both',#extend the colorbar in both directions
-                                          transform=ccrs.PlateCarree(), #fit data into map
-                                           cbar_kwargs={'label':ds1[f'{emission}'].attrs['units'],'shrink':.8}, #label our colorbar
-                                            cmap='BrBG_r' #choose color for our colorbar
-    )  
-
-    ax.add_feature(cfeat.STATES)
-    ax.coastlines() #add coastlines
-    ax.set_extent(lat_lon) #set a limit on the plot lat and lon)
+def plot_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, figsize):
+    fig, axes = plt.subplots(len(emissions), len(seasons), figsize = figsize, subplot_kw={'projection':ccrs.PlateCarree()})
+    for idx_spec, emission in enumerate(emissions):
+        for idx_season, season_val in enumerate(seasons):
+            ax = axes[idx_season, idx_spec]
+            q = (ds1[emission].groupby('time.season').mean().sel(season = season_val) - ds2[emission].groupby('time.season').mean().sel(season = season_val)).plot(
+                                                ax=ax, #set the axis
+                                                   levels = np.squeeze(levels), #set the levels for our colorbars
+                                                   extend='both',#extend the colorbar in both directions
+                                                  transform=ccrs.PlateCarree(), #fit data into map
+                                                add_colorbar = False,
+                                                    cmap='BrBG_r' #choose color for our colorbar
+            )  
+            ax.set_title(f'')
+            ax.add_feature(cfeat.STATES)
+            ax.coastlines() #add coastlines
+            ax.set_extent(lat_lon) #set a limit on the plot lat and lon)
+    axes[1,0].set_title(r'$NO_x$', fontsize = 14)
+    axes[1,1].set_title(r'$SO_2$', fontsize = 14)
+    pad = 5
+    axes[0,0].annotate('JJA', xy=(0.07, 0.65), xycoords = 'figure fraction', fontsize = 14)
+    axes[0,1].annotate('DJF', xy=(0.07, 0.25), xycoords = 'figure fraction', fontsize = 14)
+    fig.subplots_adjust(right=0.8)
+    # put colorbar at desire position
+    cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
+    fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
+    cbar_ax.set_xlabel(r'$\frac{kg}{m^2s}$', fontsize = 14)
