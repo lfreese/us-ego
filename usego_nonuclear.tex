@@ -12,10 +12,8 @@
 \usepackage{gensymb}
 \usepackage{natbib}
 \usepackage{bm}
-%\addbibresource{references.bib}
 
 \titleformat*{\subsection}{\normalfont\fontfamily{phv}}
-%\titleformat*{\subsection}[runin]{}{}{}{}[]
   \titleformat{\subsection}[runin]{\normalfont\bfseries}{\thesubsection.}{3pt}{}
   \titleformat{\subsubsection}[runin]{\normalfont\bfseries}{\thesubsubsection.}{3pt}{}
 
@@ -25,6 +23,7 @@
 Advised by Prof. Noelle Selin}
 
 \begin{document}
+
 \maketitle
 \thispagestyle{empty}
 
@@ -78,13 +77,19 @@ US-EGO takes all energy generating units (EGU's) across the United States, their
 
 The model returns hourly output of generation, from which we calculate the hourly emissions of \ce{SO2} and \ce{NOx}. These hourly emissions are merged onto a 0.5\degree by 0.625\degree grid. 
 
-In order to generate the no-nuclear scenario, we remove all nuclear power plants from the possible EGUs. In this scenario, generation cannot match the U.S. energy demand in the summertime in the ERC-REST region (eastern Texas), and therefore we close the gap by adding generators that have prohibitive costs such that they are only utilized when the optimization cannot close. These generators have zero emissions, and are there to allow for the optimization to close, and thus we assume partial blackouts in ERC-REST  without nuclear power during those time periods.
+In order to generate the no-nuclear scenario, we remove all nuclear power plants from the possible EGUs. In this scenario, generation cannot match the U.S. energy demand in the summertime in the ERC-REST region (eastern Texas), and therefore we close the gap by adding generators that have prohibitive costs such that they are only utilized when the optimization cannot close. These generators have zero emissions, and are there to allow for the optimization to close, and thus we assume partial blackouts in ERC-REST  without nuclear power during those time periods. This in itself is an important outcome of this work, which is that with the current grid, it is unlikely that the U.S. would be able to handle large-scale immediate shutdowns of nuclear power. We understand that realistically, new energy generating units will be developed alongside shutdowns of nuclear power plants, and it is likely much of that will be natural gas or renewables rather than coal, and future work will focus on longer-term scenarios in which new energy development is considered as well.
 
 \subsection{Chemical Transport Model: GEOS-Chem}
-We use the GEOS-Chem model \citep{} version 12.6.1 \citep{noauthor_geos-chem_2019} to simulate \ce{SO2}, \ce{NOx}, \ce{PM_{2.5}} and ozone concentrations. We use a global horizontal resolution of 4\degree x 5\degree to create boundary conditions for a nested North American run with horizontal resolution of 0.5\degree by 0.625\degree between 140\degree - 40\degree W and 10\degree - 70\degree N. We run full-chemistry in the troposphere only, with 47 vertical levels. Our spin-up is four months, and we analyze daily concentration outputs for the year of 2016. 
+We use the GEOS-Chem model \citep{} version 12.6.1 \citep{noauthor_geos-chem_2019} to simulate \ce{SO2}, \ce{NOx}, \ce{PM_{2.5}} and ozone concentrations. We use a global horizontal resolution of 4\degree x 5\degree to create boundary conditions for a nested North American run with horizontal resolution of 0.5\degree by 0.625\degree between 140\degree - 40\degree W and 10\degree - 70\degree N. We run full-chemistry in the troposphere only, with 47 vertical levels. Our spin-up is four months, and we analyze daily concentration outputs for the year of 2016. GEOS-Chem version 12 has a number of improvements that reduce the high nitrate bias seen in previous versions of GEOS-Chem \citep{walker_simulation_2012}, including 1. improved dry deposition of \ce{HNO_3} at cold temperatures \citep{jaegle_nitrogen_2018}, 2. updates to ISORROPIA, the thermodynamic model for inorganic aerosol formation to version 2.2 \citep{fountoukis_isorropia_2007}, and 3. improved treatment of heterogeneous \ce{NO_2}, \ce{NO_3}, and \ce{N_2O_5} chemistry in aerosols and clouds.
 
 We run four GEOS-Chem simulations with different U.S. EGU emission inputs: default, e-grid, US-EGO, and no-nuclear. The default simulation takes the standard GEOS-Chem U.S. EGU emissions files, which are taken from the National Emissions Inventory (NEI) 2011 emissions scaled to the year 2013. The e-grid simulation utilizes the EPA's Emission and Generation Resource Integrated Database (e-grid) \citep{epa_emissions_2016} \ce{SO2} and \ce{NOx} emissions gridded onto a 0.5\degree by 0.625\degree grid. The US-EGO simulation uses the emissions profiles created through the US-EGO model, and the no-nuclear scenario uses emissions profiles created through the US-EGO model in a no nuclear scenario. 
 
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.4]{}
+    \caption{Spatial maps of coal, nuclear and natural gas power plants across the U.S.} 
+    \label{fig:plants}
+\end{figure}
 
 \section{Results and Discussion}
 \subsection{Model Validation}
@@ -94,22 +99,57 @@ In order to validate the model, we compare our emissions output to that of the E
 Our model emissions by region and fuel-type correlates reasonably well with the emissions by region and fuel-type from both the e-grid and NEI (Figure***), which indicates that the optimization does an adequate job of capturing the emissions of energy generating units across the United States in the year 2016. We find bias in x regions during x times ***.
 
 From this, we can have confidence that our model 
-\subsection{Ozone impacts of a no-nuclear scenario}
-
-Figure *** shows the seasonal changes in \ce{SO2} and \ce{NOx} concentrations across the United States, and regionally. We define the summer season as June, July and August (JJA), and winter as December, January, and February (DJF) We see increases in \ce{NOx} emissions nationwide throughout the entire year, with 
+\subsection{Ozone and \ce{PM_{2.5}} impacts of a no-nuclear scenario}
 
 \begin{figure}
     \centering
     \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/summer_national_dif.png}
-    \caption{Spatial maps of summer (JJA) concentration differences between scenarios (no nuclear - normal). We see the largest differences in \ce{NO_x} and \ce{SO_2} concentrations in the Northeast, leading to large differences in \ce{PM_{2.5}} and ozone in the region as well. 
-    \label{fig:my_label}
+    \caption{Spatial maps of summer (JJA) concentration differences between scenarios (no nuclear - normal). We see the largest differences in \ce{NO_x} and \ce{SO_2} concentrations in the Northeast, leading to large differences in \ce{PM_{2.5}} and ozone in the region as well.} 
+    \label{fig:summer_dif}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/winter_national_dif.png}
+    \caption{Spatial maps of winter (DJF) concentration differences between scenarios (no nuclear - normal). We see the largest differences in \ce{NO_x} and \ce{SO_2} concentrations in the Northeast, leading to large differences in \ce{PM_{2.5}} as well. Winter ozone levels are not included.} 
+    \label{fig:winter_dif}
 \end{figure}
 
-\subsection{\ce{PM_{2.5}} Trends}
+Here we look at the differences between the no nuclear and normal scenarios in the summer, June, July and August (JJA) and winter, December, January, February seasons (DJF). 
+
+Differences between the two scenarios in \ce{SO2} and \ce{NOx} concentrations are similar in the summer and winter, with the largest differences occuring in the eastern Midwest, Northeast and Southeast, as seen in Figure ~\ref{fig:summer_dif} and Figure ~\ref{fig:winter_dif}. We find increases in both for a no nuclear scenario when compared to our normal scenario. The regions in which concentrations increase are also regions in which there is a much larger reliance on nuclear power in the normal scenario, as well as shift to reliance on coal in the no nuclear scenario, as can be seen in Figure ~\ref{fig:plants}. \ce{NOx} concentrations increase by up to 40 ppb (a 1000\% increase) in Western Pennsylvania during the wintertime, and \ce{SO2} concentrations increase by up to 18 ppb (a 3700\% increase) along the Pennsylvania-Ohio border during wintertime. 
+
+There are overall increases in both summertime and wintertime \ce{PM_{2.5}} concentrations across the United States when nuclear power plants are shut down, with changes of up to 10 $\mu g/m^3$ occurring in June in the eastern Missouri. Increases in \ce{PM_{2.5}} during the summer time are an average of .04 $\mu g/m^3$ greater than during the winter. Particularly, in the central-western Pennsylvania, the summer time \ce{PM_{2.5}} difference is up to 1.2 $\mu g/m^3$ greater than that in the winter. 
+
+Summertime ozone, on the other hand, decreases largely throughout the Northeast, with slight increases in the Southeast and western Midwest regions. Maximum ozone increases occur along the South Carolina-Georgia border with increases of 1.7 ppb. Decreases are largest in the Northeast, particularly along the Pennsylvania-Ohio border, decreasing by up to 21.8 ppb. 
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/}
+    \caption{Spatial maps of summer (JJA) concentration differences between scenarios (no nuclear - normal). We see the largest differences in \ce{NO_x} and \ce{SO_2} concentrations in the Northeast, leading to large differences in \ce{PM_{2.5}} and ozone in the region as well.} 
+    \label{fig:summer_winter_dif}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/winter_national_dif.png}
+    \caption{Spatial maps of winter (DJF) concentration differences between scenarios (no nuclear - normal). We see the largest differences in \ce{NO_x} and \ce{SO_2} concentrations in the Northeast, leading to large differences in \ce{PM_{2.5}} as well. Winter ozone levels are not included.} 
+    \label{fig:winter_dif}
+\end{figure}
+
+\subsection{Ozone and \ce{PM_{2.5}} Sensitivities}
+As GEOS-Chem has a high nitrate bias in the Northest, we expect this to impact our ozone and \ce{PM_{2.5}} concentrations in both scenarios; here we discuss the implications of the bias that we previously described, and explain its role in this work. 
+
+Based on \cite{jin_evaluating_2017}, we calculate a surface ratio of formaldehyde to \ce{NO_2} (FNR), which we use to evaluate the surface ozone production regime of each grid cell. For ratios < 0.5, we assume a VOC limited regime, for ratios > 0.8, we assume a \ce{NO_x} limited regime, and in between is transitional. In VOC limited regimes, an increase in \ce{NO_x} will actually contribute to decreased levels of ozone, as VOCs are fully saturated and any additional \ce{NO_x} will just contribute to suppression of ozone formation. This is what occurs throughout the Northeast and eastern Midwest regions when we increase \ce{NO_x} in the no nuclear scenario. On the other hand, in \ce{NO_x} limited regimes, such as rural areas in the Southeast and Northeast, we find increased levels of \ce{NO_x} leading to increases in ozone, as the VOCs are not fully saturated and any additional \ce{NO_x} will contribute to the formation of ozone. 
+
+This ratio is highly sensitive to the \ce{NO_x} and \ce{CH_2O} concentrations in each region, and with high nitrate bias in the Northeast, it is likely that we will see a bias in our FNR towards being VOC limited rather than \ce{NO_x} limited. We compare these regimes to ones based on interpolated observational data, finding ***!!!! 
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/summer_regime_national_ratio.png}
+    \caption{Spatial maps of summer (JJA) FNR} 
+    \label{fig:summer_FNR}
+\end{figure}
 
 \section{Future work}
-
-
 
 \section{Acknowledgements}
 
