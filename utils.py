@@ -41,32 +41,32 @@ def import_GC_runs(egrid_path, NEI_path, MODEL_path, aerosol_output, speciesconc
 
 
 
-def linregress_data(obs_df, interp_df, model_names, month_string):
+def linregress_data(obs_df, interp_df, model_names, month_string, species_list):
     result = [stats.linregress(
             x = obs_df.loc[
-            (obs_df['species'] == species_dict[species])
+            (obs_df['species'] == species)
             ].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean'],
             y = interp_df.loc[
             (interp_df['model'] == model) & 
-            (interp_df['species'] == species_dict[species])
+            (interp_df['species'] == species)
             ].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean']
-            ) for species in ['PM25', 'SO2', 'NO2', 'O3'] for model in model_names]
+            ) for species in species_list for model in model_names]
 
-    lin_regress_df = pd.merge(pd.DataFrame([(species,model) for species in ['PM25', 'SO2', 'NO2', 'O3'] for model in model_names], columns = ('species','model')),
+    lin_regress_df = pd.merge(pd.DataFrame([(species,model) for species in species_list for model in model_names], columns = ('species','model')),
              pd.DataFrame(result), 
              right_index = True, 
              left_index = True)
     return lin_regress_df
 
 
-def interp_obs_differences(EPA_obs_df, interp_df, month_string, model_names):
+def interp_obs_differences(EPA_obs_df, interp_df, month_string, model_names, species_list):
     EPA_interp_dif = {}
-    for idx_s, species in enumerate(['PM25', 'SO2', 'NO2', 'O3']):
+    for idx_s, species in enumerate(species_list):
         EPA_interp_dif[species] = {}
         for idx_m, model in enumerate(model_names):
             EPA_interp_dif[species][model] = (
-                EPA_obs_df.loc[EPA_obs_df['species'] == species_dict[species]].groupby([pd.Grouper('Latitude'), pd.Grouper('Longitude')]).mean()['Arithmetic Mean'] -
-                interp_df.loc[(interp_df['model'] == model) & (interp_df['species'] == species_dict[species])].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean']            )
+                EPA_obs_df.loc[EPA_obs_df['species'] == species].groupby([pd.Grouper('Latitude'), pd.Grouper('Longitude')]).mean()['Arithmetic Mean'] -
+                interp_df.loc[(interp_df['model'] == model) & (interp_df['species'] == species)].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean']            )
     return(EPA_interp_dif)
 
 def ppb_to_ug(ds, species_to_convert, mw_species_list, stp_p = 101325, stp_t = 298.):
@@ -76,8 +76,8 @@ def ppb_to_ug(ds, species_to_convert, mw_species_list, stp_p = 101325, stp_t = 2
     for spec in species_to_convert:
         attrs = ds[spec].attrs
         ds[spec] = ds[spec]*mw_species_list[spec]*ppb_ugm3 #ppb*g/mol*g/m^3
-        attrs['units'] = 'μg m-3'
-        ds[spec].attrs.update(attrs)
+        ds[spec].attrs['units'] = 'μg m-3'
+    return(ds)
         
 def open_ISORROPIA(DJF_path, JJA_path, region_name):
     DJF_ds = xr.open_dataset(DJF_path)

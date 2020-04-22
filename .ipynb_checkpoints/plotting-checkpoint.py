@@ -137,15 +137,15 @@ def obs_model_plot(ds, df, species,model_names,
         
         ####### GEOS-CHEM output #######
         #PCM parameters and plot for model
-        PCM_m=ax.pcolormesh(ds.sel(model_name = model)['lon'], ds.sel(model_name = model)['lat'], ds.sel(model_name = model).mean(dim = 'time')[f'{species}'], 
+        PCM_m=ax.pcolormesh(ds.sel(model_name = model).groupby('time.month').mean().sel(month = month)['lon'], ds.sel(model_name = model).groupby('time.month').mean().sel(month = month)['lat'], ds.sel(model_name = model).groupby('time.month').mean().sel(month = month)[f'{species}'], 
                             cmap=cmap,vmin=vmin, vmax=vmax)
     
         ###### observations #######
         #create lat and lon for observations
-        lat_o = df.loc[df['species'] == species_dict[species]]['Latitude'].unique()
-        lon_o = df.loc[df['species'] == species_dict[species]]['Longitude'].unique()
+        lat_o = df.loc[(df['species'] == species) & (df.date.dt.month == month)]['Latitude'].unique()
+        lon_o = df.loc[(df['species'] == species) & (df.date.dt.month == month)]['Longitude'].unique()
         #define the concentrations for observations
-        mean_conc=df.loc[(df['species'] == species_dict[species])].groupby(['Latitude', 'Longitude']).mean()['Arithmetic Mean']
+        mean_conc=df.loc[(df['species'] == species) & (df.date.dt.month == month)].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean']
         #PCM parameters and plot for observations
         PCM_o=ax.scatter(lon_o, lat_o, c=mean_conc, transform=ccrs.PlateCarree(),cmap=cmap,edgecolors='k',linewidth=.3,vmin=vmin, vmax=vmax)
         plt.colorbar(PCM_o, ax=ax,extend='max', shrink=.3) 
@@ -153,9 +153,33 @@ def obs_model_plot(ds, df, species,model_names,
         ###### adjustments and labels ########
         #adjust lat&lon being mapped
         ax.set_extent(lat_lon)
-        plt.title(f'{model} {species}'); #title
+        plt.title(f'{model} {month} {species}'); #title
         
+def obs_plot(df,species, month,
+            vmin, vmax, cmap, figsize,
+            lat_lon, lat_spacing=47,lon_spacing=73 
+                   ):
+    fig = plt.figure(figsize=figsize)
 
+    ###### Create axes ######
+    ax=fig.add_subplot(1,1,1, projection=ccrs.PlateCarree())
+    ax.coastlines()
+    ax.add_feature(cfeat.STATES)
+        
+    ###### observations #######
+    #create lat and lon for observations
+    lat_o = df.loc[(df['species'] == species) & (df.date.dt.month == month)]['Latitude'].unique()
+    lon_o = df.loc[(df['species'] == species) & (df.date.dt.month == month)]['Longitude'].unique()
+    #define the concentrations for observations
+    mean_conc=df.loc[(df['species'] == species) & (df.date.dt.month == month)].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean']
+    #PCM parameters and plot for observations
+    PCM_o=ax.scatter(lon_o, lat_o, c=mean_conc, transform=ccrs.PlateCarree(),cmap=cmap,edgecolors='k',linewidth=.3,vmin=vmin, vmax=vmax)
+    plt.colorbar(PCM_o, ax=ax,extend='max', shrink=.3) 
+
+    ###### adjustments and labels ########
+    #adjust lat&lon being mapped
+    ax.set_extent(lat_lon)
+    plt.title(f'{month} {species}'); #title
 
         
 def loc_mean_plot(df, species_list, model_names, subset, 
@@ -184,18 +208,18 @@ def loc_mean_plot(df, species_list, model_names, subset,
             plt.ylabel('% Difference')
             plt.title(f'{species} Average % Difference between Models and EPA Observations')
             
-def interp_scatterplot(interp_df, obs_df, lin_regress_df, model_names, month_string, colors_dict):
-    fig, axes = plt.subplots(4,3,figsize = [9,12])
-    for idx_s, species in enumerate(['PM25', 'SO2', 'NO2', 'O3']):
+def interp_scatterplot(interp_df, obs_df, lin_regress_df,species_list, model_names, month_string, colors_dict, rows,columns):
+    fig, axes = plt.subplots(rows,columns,figsize = [9,12])
+    for idx_s, species in enumerate(species_list):
         for idx_m, model in enumerate(model_names):
             ax = axes[idx_s,idx_m]
-            x = obs_df.loc[(obs_df['species'] == species_dict[species])].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean']
-            y = interp_df.loc[(interp_df['model'] == model) & (interp_df['species'] == species_dict[species])].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean']
+            x = obs_df.loc[(obs_df['species'] == species)].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean']
+            y = interp_df.loc[(interp_df['model'] == model) & (interp_df['species'] == species)].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean']
             #abline = lin_regress_df.loc[(lin_regress_df['model'] == model) & (lin_regress_df['species'] == species)]['slope'].values * x + lin_regress_df.loc[(lin_regress_df['model'] == model) & (lin_regress_df['species'] == species)]['intercept'].values
             ax.scatter(x, y, c = colors_dict[model], marker = '.')
             ax.plot(x, x + 0, 'xkcd:grey', label = '1:1 Line')
             #ax.plot(x,abline,'xkcd:almost black' , label = 'Linear Regression')
-            ax.set_xlabel('EPA Annual Mean')
+            ax.set_xlabel('Observational Annual Mean')
             ax.set_ylabel('GC Annual Mean')
             ax.set_xlim([-1,x.max()+1])
             ax.set_ylim([-1,x.max()+1])
@@ -209,13 +233,13 @@ def interp_scatterplot(interp_df, obs_df, lin_regress_df, model_names, month_str
     plt.tight_layout()
 
     
-def hist_obs_interp(df, model_names, colors_dict, bins):
-    fig, axes = plt.subplots(4,3,figsize = [9,12])
-    for idx_s, species in enumerate(['PM25', 'SO2', 'NO2', 'O3']):
+def hist_obs_interp(df, model_names, colors_dict, bins, species_list, rows, columns):
+    fig, axes = plt.subplots(rows,columns,figsize = [9,12])
+    for idx_s, species in enumerate(species_list):
         for idx_m, model in enumerate(model_names):
             ax = axes[idx_s,idx_m]
             n, bins, patches = ax.hist(df[species][model], bins, color = colors_dict[model])
-            ax.set_title(f'{species} {model} EPA Observations - \n Interpolated GEOS-Chem Data')
+            ax.set_title(f'{species} {model} Observations - \n Interpolated GEOS-Chem Data')
     plt.tight_layout()
     
 
