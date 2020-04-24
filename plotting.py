@@ -15,7 +15,7 @@ levels_dict = {'PM25':np.arange(0., 40., .5), 'SO2':np.arange(0., 5., .1),
                'dif':np.arange(-1., 1.01, .01), 'regional_dif':np.arange(-1.5, 1.51, .01), 'regional_dif_tight':np.arange(-.3, .31, .01),
               'percent_dif_full':np.arange(-100, 101, 1), 'percent_dif_tight':np.arange(-10,10.1,.1)}
 
-proper_names_dict = {'PM25':r'$PM_{2.5} (\mu g/m^3)$', 'NOx':r'$NO_x (ppbv)$', 'SO2':r'$SO_2 (ppbv)$','O3':r'$O_3 (ppbv)$'}
+proper_names_dict = {'PM25':r'$PM_{2.5} (\mu g/m^3)$', 'NOx':r'$NO_x (ppbv)$', 'SO2':r'$SO_2 (ppbv)$','O3':r'$O_3 (ppbv)$', 'NIT':'Nitrate (\mu g/m^3)', 'NO2':r'$NO_2 (ppbv)$','SO4':r'$SO_4 (\mu g/m^3)$'}
 
 
 def concentration_plot_annual(ds, species_names, model_names, rows, 
@@ -83,11 +83,8 @@ def concentration_plot_seasonal_dif(ds, species_names, seasons, rows,
             ax.coastlines() #add coastlines
             ax.set_extent(lat_lon) #set a limit on the plot lat and lon
             ax.set_title(''); #title
-    axes[1,0].set_title(r'$SO_2$ (ppb)', fontsize = 14, pad = 15)
-    axes[1,1].set_title(r'$NO_x$ (ppb)', fontsize = 14, pad = 15)
-    axes[1,2].set_title(r'$PM_{2.5} (\mu g/m^3)$', fontsize = 14, pad = 15)
-    axes[1,3].set_title(r'$O_3$ (ppb)', fontsize = 14, pad = 15)
-    pad = 5
+    for idx_spec, species in enumerate(species_names):
+        axes[1,idx_spec].set_title(f'{proper_names_dict[species]}', fontsize = 14, pad = 15)
     axes[0,0].annotate('JJA', xy=(0.06, 0.65), xycoords = 'figure fraction', fontsize = 14)
     axes[0,1].annotate('DJF', xy=(0.06, 0.25), xycoords = 'figure fraction', fontsize = 14)
     fig.subplots_adjust(right=0.8)
