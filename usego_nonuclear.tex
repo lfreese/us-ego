@@ -12,6 +12,7 @@
 \usepackage{gensymb}
 \usepackage{natbib}
 \usepackage{bm}
+\usepackage{setspace}
 
 \titleformat*{\subsection}{\normalfont\fontfamily{phv}}
   \titleformat{\subsection}[runin]{\normalfont\bfseries}{\thesubsection.}{3pt}{}
@@ -22,6 +23,7 @@
 \\\\
 Advised by Prof. Noelle Selin}
 
+\doublespace
 \begin{document}
 
 \maketitle
@@ -37,8 +39,7 @@ Advised by Prof. Noelle Selin}
 {\textsc{Abstract.} 
 The United States’ future energy mix is likely to transition from its current 20\% reliance on nuclear power. This is due to policy changes and to scheduled shutdowns of nuclear power plants that have reached the end of their lifetime. Given projected growth in demand, the base-load nature of nuclear power, and the intermittency of most renewable resources, fossil fuel-based energy will make up at least part of this deficit, impacting air quality and the associated health impacts. We develop and validate a generator-level energy grid optimization and emissions model, and couple it with the chemical transport model, GEOS-Chem, to estimate the impact that an immediate shutdown of nuclear power plants would have on concentrations of ozone and fine particulate matter (\ce{PM_{2.5}}).
 
-When compared to a business-as-usual scenario, the nuclear shutdown scenario leads to a nationwide 49\% increase in \ce{NO_x} emissions and a 45\% increase in \ce{SO2} emissions by coal; and a 40\% increase in \ce{NO_x} emissions by natural gas. We find \ce{PM_{2.5}} increases an average of 0.4\% nationwide, with maximum local increases of up to 33\%; summertime ozone increases an average of 0.11\%, with maximum local increases of up to 16\%. Summertime ozone decreases in small regions with volatile organic compound-limited chemical regimes, including Pittsburgh, Sacramento, Bismarck and Portland. This suggests that rapidly shutting down nuclear power plants shifts the current generation mix towards dirtier fuel sources, degrading air quality nationwide. Realistically, shutdowns will occur over longer timescales during which new generation will be deployed; this work indicates the importance of prioritizing renewable deployment as new sources of generation in order to reduce these impacts. Importantly, our generator-level energy grid optimization model allows us to assess variations across the scenarios at the local scale, which occur due to a combination of local fuel sources, demand patterns, and chemical regimes. 
- .}
+When compared to a business-as-usual scenario, the nuclear shutdown scenario leads to a nationwide 49\% increase in \ce{NO_x} emissions and a 45\% increase in \ce{SO2} emissions by coal; and a 40\% increase in \ce{NO_x} emissions by natural gas. We find \ce{PM_{2.5}} increases an average of 0.4\% nationwide, with maximum local increases of up to 33\%; summertime ozone increases an average of 0.11\%, with maximum local increases of up to 16\%. Summertime ozone decreases in small regions with volatile organic compound-limited chemical regimes, including Pittsburgh, Sacramento, Bismarck and Portland. This suggests that rapidly shutting down nuclear power plants shifts the current generation mix towards dirtier fuel sources, degrading air quality nationwide. Realistically, shutdowns will occur over longer timescales during which new generation will be deployed; this work indicates the importance of prioritizing renewable deployment as new sources of generation in order to reduce these impacts. Importantly, our generator-level energy grid optimization model allows us to assess variations across the scenarios at the local scale, which occur due to a combination of local fuel sources, demand patterns, and chemical regimes.}
 
 \bigskip
 \bigskip 
@@ -94,11 +95,14 @@ We run four GEOS-Chem simulations with different U.S. EGU emission inputs: defau
 \section{Results and Discussion}
 \subsection{Model Validation}
 
-In order to validate the model, we compare our emissions output to that of the EPA's e-grid, and the NEI 2011 data, scaled to the 2013 values as is done in GEOS-Chem. We compare the emissions profiles before running it through GEOS-Chem, and the resulting concentrations as obtained from these three GEOS-Chem scenarios. Additionally, we compare the annual mean GEOS-Chem concentrations of each model run to the EPA Air Quality System (AQS) monitoring data for 2016. 
+In order to validate the model, we compare our emissions output to that of the EPA's e-grid, and the NEI 2011 data, scaled to the 2013 values as is the default in GEOS-Chem. We compare the emissions profiles before running it through GEOS-Chem, and the resulting concentrations as obtained from these three GEOS-Chem scenarios. Additionally, we compare the annual mean GEOS-Chem concentrations of each model run to two on-the-ground observational networks: the EPA Air Quality System (AQS) monitoring data for 2016 \citep{us_epa_daily_2016} and the IMPROVE network \citep{malm_spatial_1994}. 
 
-Our model emissions by region and fuel-type correlates reasonably well with the emissions by region and fuel-type from both the e-grid and NEI (Figure***), which indicates that the optimization does an adequate job of capturing the emissions of energy generating units across the United States in the year 2016. We find bias in x regions during x times ***.
+Our model emissions by region and fuel-type correlates reasonably well with the emissions by region and fuel-type from both the e-grid and NEI (Figure***), which indicates that the optimization does an adequate job of capturing the emissions of energy generating units across the United States in the year 2016. We find bias in x regions during x times ***. From this, we can have confidence that our model does as well at capturing emissions from the EGU sector as standard datasets do. 
 
-From this, we can have confidence that our model 
+Relative to observations, our model 
+
+
+
 \subsection{Ozone and \ce{PM_{2.5}} impacts of a no-nuclear scenario}
 
 \begin{figure}
@@ -117,12 +121,8 @@ There are overall increases in both summertime and wintertime \ce{PM_{2.5}} conc
 
 Summertime ozone, on the other hand, decreases largely throughout the Northeast, with slight increases in the Southeast and western Midwest regions. Maximum ozone increases occur along the South Carolina-Georgia border with increases of 1.7 ppb. Decreases are largest in the Northeast, particularly along the Pennsylvania-Ohio border, decreasing by up to 21.8 ppb. 
 
-\subsection{Ozone and \ce{PM_{2.5}} Sensitivities}
-As GEOS-Chem has a high nitrate bias in the Northest, we expect this to impact our ozone and \ce{PM_{2.5}} concentrations in both scenarios; here we discuss the implications of the bias that we previously described, and explain its role in this work. 
-
-Based on \cite{jin_evaluating_2017}, we calculate a surface ratio of formaldehyde to \ce{NO_2} (FNR), which we use to evaluate the surface ozone production regime of each grid cell. For ratios < 0.5, we assume a VOC limited regime, for ratios > 0.8, we assume a \ce{NO_x} limited regime, and in between is transitional. In VOC limited regimes, an increase in \ce{NO_x} will actually contribute to decreased levels of ozone, as VOCs are fully saturated and any additional \ce{NO_x} will just contribute to suppression of ozone formation. This is what occurs throughout the Northeast and eastern Midwest regions when we increase \ce{NO_x} in the no nuclear scenario. On the other hand, in \ce{NO_x} limited regimes, such as rural areas in the Southeast and Northeast, we find increased levels of \ce{NO_x} leading to increases in ozone, as the VOCs are not fully saturated and any additional \ce{NO_x} will contribute to the formation of ozone. 
-
-This ratio is highly sensitive to the \ce{NO_x} and \ce{CH_2O} concentrations in each region, and with high nitrate bias in the Northeast, it is likely that we will see a bias in our FNR towards being VOC limited rather than \ce{NO_x} limited. We compare these regimes to ones based on interpolated observational data, finding ***!!!! 
+\subsection{Ozone Regimes}
+Based on \cite{jin_evaluating_2017}, we calculate a surface ratio of formaldehyde to \ce{NO_2} (FNR), which we use to evaluate the surface ozone production regime of each grid cell. For ratios < 0.5, we assume a VOC limited regime, for ratios > 0.8, we assume a \ce{NO_x} limited regime, and in between is transitional. In VOC limited regimes, an increase in \ce{NO_x} will actually contribute to decreased levels of ozone, as VOCs are fully saturated and any additional \ce{NO_x} will contribute to suppression of ozone formation. This is what occurs throughout the Northeast and eastern Midwest regions when we increase \ce{NO_x} in the no nuclear scenario. On the other hand, in \ce{NO_x} limited regimes, such as rural areas in the Southeast and Northeast, we find increased levels of \ce{NO_x} leading to increases in ozone, as the VOCs are not fully saturated and any additional \ce{NO_x} will contribute to the formation of ozone. This ratio is highly sensitive to the \ce{NO_x} and \ce{CH_2O} concentrations in each region, and we can assess the validity of these ratios based on 1. observational comparisons, and 2. whether or not a region we determined as VOC limited does have a decrease in ozone with increases in \ce{NO_x}. As can be seen in !!!FIGURE!!!, we find that !!!!!!. 
 
 \begin{figure}
     \centering
@@ -130,7 +130,10 @@ This ratio is highly sensitive to the \ce{NO_x} and \ce{CH_2O} concentrations in
     \caption{Spatial maps of summer (JJA) FNR} 
     \label{fig:summer_FNR}
 \end{figure}
+\subsection{\ce{PM_{2.5}} Sensitivities}
+As GEOS-Chem has a high nitrate bias in the Northest, we expect this to impact our \ce{PM_{2.5}} concentrations in both scenarios; here we discuss the implications of the bias that we previously described, and explain its role in this work.
 
+We utilize an offline version of ISORROPIAII, which allows us to look at inorganic particulate matter formation as a function of temperature, relative humidity, nitrate, sulfate, ammonia, chlorine, potassium, magnesium and calcium \citep{fountoukis_isorropia_2007}. We use regional and seasonal mean ammonia, temperature, and relative humidity values from our normal scenario model runs, and set a range for sulfate and nitrate to obtain !!!FIGURES!!!, which provide an understanding of the sensitivity of \ce{PM_{2.5}} formation to both sulfate and nitrate concentrations. As expected, \ce{PM_{2.5}} is equally sensitive to both species. We compare this to the seasonal average \ce{PM_{2.5}}, sulfate, and nitrate from IMPROVE observations at each station, and to our normal scenario model output, interpolated to the location of each IMPROVE station. We find that the model does !!!!
 \section{Future work}
 
 \section{Acknowledgements}
