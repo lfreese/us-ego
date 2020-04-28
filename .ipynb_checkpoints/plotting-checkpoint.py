@@ -5,6 +5,7 @@ import numpy as np
 import utils
 from matplotlib.lines import Line2D
 
+proper_names_dict = {'PM25':r'$PM_{2.5}\ (\mu g/m^3)$', 'NOx':r'$NO_x\ (ppbv)$', 'SO2':r'$SO_2\ (ppbv)$','O3':r'$O_3\ (ppbv)$', 'NIT':r'$Nitrate\ (\mu g/m^3)$', 'NO2':r'$NO_2\ (ppbv)$','SO4':r'$SO_4\ (\mu g/m^3)$'}
 
 import sys
 sys.path.append('/model_validation')
@@ -15,14 +16,13 @@ levels_dict = {'PM25':np.arange(0., 40., .5), 'SO2':np.arange(0., 5., .1),
                'dif':np.arange(-1., 1.01, .01), 'regional_dif':np.arange(-1.5, 1.51, .01), 'regional_dif_tight':np.arange(-.3, .31, .01),
               'percent_dif_full':np.arange(-100, 101, 1), 'percent_dif_tight':np.arange(-10,10.1,.1)}
 
-proper_names_dict = {'PM25':r'$PM_{2.5} (\mu g/m^3)$', 'NOx':r'$NO_x (ppbv)$', 'SO2':r'$SO_2 (ppbv)$','O3':r'$O_3 (ppbv)$', 'NIT':'Nitrate (\mu g/m^3)', 'NO2':r'$NO_2 (ppbv)$','SO4':r'$SO_4 (\mu g/m^3)$'}
 
 
 def concentration_plot_annual(ds, species_names, model_names, rows, 
                        columns, figsize, levels,
                      cmap,shrink_cbar,
                        lat_lon, extension = 'max'):
-    fig, axes =  plt.subplots(len(species), len(model_names), figsize=figsize,subplot_kw={'projection':ccrs.PlateCarree()})
+    fig, axes =  plt.subplots(len(species_names), len(model_names), figsize=figsize,subplot_kw={'projection':ccrs.PlateCarree()})
     for idx_m, model in enumerate(model_names):
         for idx_s, species in enumerate(species_names):
             ax = axes[idx_s,idx_m]        
@@ -223,7 +223,6 @@ def interp_scatterplot(interp_df, obs_df, lin_regress_df,species_list, model_nam
             r_val = np.round(lin_regress_df.loc[(lin_regress_df['species'] == species) & (lin_regress_df['model'] == model), 'rvalue'].values[0], 2)
             std_err = np.round(lin_regress_df.loc[(lin_regress_df['species'] == species) & (lin_regress_df['model'] == model), 'stderr'].values[0], 2)
             ax.set_title(f'{species} {model} \n R-value: {r_val} \n Standard error: {std_err}')
-            #ax.legend()
     custom_lines = [Line2D([0], [0], color='xkcd:grey', lw=4),
                 Line2D([0], [0], color='xkcd:almost black', lw=4)]
     plt.legend(custom_lines, ['1:1 Line', 'Linear Regression'])
@@ -298,3 +297,32 @@ def plot_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, figsize):
     cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
     fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
     cbar_ax.set_xlabel(r'$\frac{kg}{m^2s}$', fontsize = 14)
+    
+    
+def plant_region_plot(ds, xvariable, yvariable1, egrid, yvariable2, figsize, normal = True):
+    fig, ax = plt.subplots(figsize=figsize)
+    width = 0.3
+    plt.bar(ds['nonuc'][xvariable], ds['nonuc'][yvariable1], color = nonuc_color, width = width, align="edge", label = 'No Nuclear')
+    if egrid == True:
+        plt.bar(ds['normal'][xvariable], ds['normal'][yvariable2], color = egrid_color, width = -width, align="edge", label = 'Egrid')
+    if normal == True:
+        plt.bar(ds['normal'][xvariable], ds['normal'][yvariable1], color = normal_color, width = width, align="center", label = 'Normal Model')
+    plt.xticks(rotation = 45)
+    ax.legend();
+    
+def fossil_fuel_plot(ds, sci_names, xvariable, pollutants, figsize, nonuc_color, normal_color, normal = True):
+    fig,axes = plt.subplots(1, len(pollutants), figsize=figsize)
+    for idx_p, pollutant in enumerate(pollutants):
+        ax = axes[idx_p]
+        width = 0.3
+        ax.bar(ds['nonuc'].sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds['nonuc'].sel(fueltype = ['Coal', 'NaturalGas'])[f'annual_{pollutant}']/1000, color = nonuc_color, width = width, align="edge", label = 'No Nuclear')
+        if normal == True:
+            ax.bar(ds['normal'].sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds['normal'].sel(fueltype = ['Coal', 'NaturalGas'])[f'annual_{pollutant}']/1000, color = normal_color, width = width, align="center", label = 'Normal Model')
+        ax.set_title(f'{sci_names[pollutant]}', fontsize = 20);
+    axes[1].set_xlabel('Fuel Type', fontsize = 14)
+    axes[0].set_ylabel(f'Emissions (tonnes/year)', fontsize = 14)
+    custom_lines = [Line2D([0], [0], color=nonuc_color, lw=4),
+                    Line2D([0], [0], color=normal_color, lw=4)]
+    plt.legend(custom_lines, ['No Nuclear', 'Normal'], bbox_to_anchor = [1.2, 1.0])
+    plt.tight_layout()
+        
