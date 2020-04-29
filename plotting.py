@@ -303,13 +303,13 @@ def plot_percent_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, fi
     for idx_spec, emission in enumerate(emissions):
         for idx_season, season_val in enumerate(seasons):
             ax = axes[idx_season, idx_spec]
-            q = ((ds1[emission].groupby('time.season').mean().sel(season = season_val) - ds2[emission].groupby('time.season').mean().sel(season = season_val))/(ds2[emission].groupby('time.season').mean().sel(season = season_val))).plot(
+            q = ((ds2[emission].groupby('time.season').mean().sel(season = season_val) - ds1[emission].groupby('time.season').mean().sel(season = season_val))/(ds2[emission].groupby('time.season').mean().sel(season = season_val))).plot(
                                                 ax=ax, #set the axis
                                                    levels = np.squeeze(levels), #set the levels for our colorbars
                                                    extend='both',#extend the colorbar in both directions
                                                   transform=ccrs.PlateCarree(), #fit data into map
                                                 add_colorbar = False,
-                                                    cmap='BrBG' #choose color for our colorbar
+                                                    cmap='BrBG_r' #choose color for our colorbar
             )  
             ax.set_title(f'')
             ax.add_feature(cfeat.STATES)
