@@ -98,12 +98,18 @@ We run four GEOS-Chem simulations with different U.S. EGU emission inputs: defau
 In order to validate the model, we compare our emissions output to that of the EPA's e-grid, and the NEI 2011 data, scaled to the 2013 values as is the default in GEOS-Chem. We compare the emissions profiles before running it through GEOS-Chem, and the resulting concentrations as obtained from these three GEOS-Chem scenarios. Additionally, we compare the annual mean GEOS-Chem concentrations of each model run to two on-the-ground observational networks: the EPA Air Quality System (AQS) monitoring data for 2016 \citep{us_epa_daily_2016} and the IMPROVE network \citep{malm_spatial_1994}. 
 
 Our model emissions by region and fuel-type correlates reasonably well with the emissions by region and fuel-type from both the e-grid and NEI \ref{fig:emissions}, which indicates that the optimization does an adequate job of capturing the emissions of energy generating units across the United States in the year 2016. We find bias in x regions during x times ***. From this, we can have confidence that our model does as well at capturing emissions from the EGU sector as standard datasets do. 
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/summer_nox_so2_emissions.png}
+    \caption{Spatial maps of differences in \ce{NO_x} and \ce{SO_2} emissions between our model and egrid} 
+    \label{fig:emissions_comp}
+\end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/summer_nox_emissions.png}
-    \caption{Spatial maps of differences in \ce{NO_x} and \ce{SO_2} emissions between our model and egrid} 
-    \label{fig:emissions}
+    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/summer_nox_so2_emissions.png}
+    \caption{Spatial maps of percent differences in \ce{NO_x} and \ce{SO_2} emissions between our normal and no nuclear scenario. We find increases of up to } 
+    \label{fig:emissions_nonuc}
 \end{figure}
 
 Previous work \citep{holt_changes_2015} on an earlier version of GEOS-Chem ahs found reasonable seasonal correlation between GEOS-Chem and IMPROVE and AQS measurements of some species, with an $r^2 > 30\%$. This includes \ce{SO_4^2}, which has low bias in the summer, but overall agreement. Nitrate is found to be biased high, particularly during winter, with an overall $r^2 = 39\%$. They additionally find an $r^2 = 42\%$ for nitrate in the midwest, where there is still an overestimate, with a NMB = 134\%. Here we specifically discuss our US-EGO model run in comparison to the observations, as we find similar correlation and biases amongst the model runs. We calculate a normalized mean bias (NMB) as $\frac{\sum(M_i - O_i)}{\sum(O_i)}*100$, where i is the monthly mean at each observational site. The model does reasonably well at calculating \ce{NO_2} concentrations as compared to EPA's AQS ($r^2 = 45\%$ and $NMB = -8\% to -50\%$ depending on the region and season). We find the smallest bias between model \ce{NO_2} and observations during the summer months, in particular, in the Northeast.
@@ -159,7 +165,7 @@ We utilize an offline version of ISORROPIAII, which allows us to look at inorgan
 \end{figure}
 
 \section{Conclusions}
-Overall, we find that under a no nuclear scenario, there are increases in \ce{PM_{2.5}} concentrations nationwide, which are particularly 
+Overall, we find that under a no nuclear scenario, there are increases in \ce{PM_{2.5}} concentrations nationwide. These concentrations are driven by changes in both \ce{SO_2} emissions and \ce{NO_x} emissions, which we find to increase up to 
 
 \section{Future work}
 We plan to re-run the model with the latest additions to GEOS-Chem which improve nitric acid deposition, and have been shown to reduce the bias in nitrate to reasonable levels. We also understand that a large limitation of this work is the potential inaccurate scaling of NEI emissions data. We plan to convert the 2017 NEI emissions data to a format that can be utilized in GEOS-Chem and utilize these scaled down to 2016 instead. We also plan to expand the analysis on IMPROVE data to include just inorganic \ce{PM_{2.5}}, calculating it in the same manner as inorganic \ce{PM_{2.5}} is calculated in GEOS-Chem: 1.33*(NIT+NH3+SO4). 
