@@ -123,7 +123,7 @@ Thus, we find that there is reason to believe our model \ce{NO_x} and ozone valu
 
 \begin{figure}
     \centering
-    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/summer_winter_national_dif.png}
+    \includegraphics[scale=0.5]{ego_nonuclear_project/Figures/summer_winter_national_dif.png}
     \caption{Spatial maps of summer (JJA) concentration differences between scenarios (no nuclear - normal). We see the largest differences in \ce{NO_x} and \ce{SO_2} concentrations in the Northeast, leading to large differences in \ce{PM_{2.5}} and ozone in the region as well.} 
     \label{fig:summer_winter_dif}
 \end{figure}
@@ -153,10 +153,13 @@ We utilize an offline version of ISORROPIAII, which allows us to look at inorgan
 
 \begin{figure}
     \centering
-    \includegraphics[scale=0.5]{ego_nonuclear_project/Figures/isorropia_obs_plot.png}
+    \includegraphics[scale=0.4]{ego_nonuclear_project/Figures/isorropia_obs_plot.png}
     \caption{Plots of standalone ISORROPIAII output for each region based on regional average temperature, relative humidity, and ammonia concentrations. Plotted on top are annual mean observational values for sulfate, nitrate, and \ce{PM_{2.5}}.} 
     \label{fig:isorropia}
 \end{figure}
+
+\section{Conclusions}
+Overall, we find that under a no nuclear scenario, there are increases in \ce{PM_{2.5}} concentrations nationwide, which are particularly 
 
 \section{Future work}
 We plan to re-run the model with the latest additions to GEOS-Chem which improve nitric acid deposition, and have been shown to reduce the bias in nitrate to reasonable levels. We also understand that a large limitation of this work is the potential inaccurate scaling of NEI emissions data. We plan to convert the 2017 NEI emissions data to a format that can be utilized in GEOS-Chem and utilize these scaled down to 2016 instead. We also plan to expand the analysis on IMPROVE data to include just inorganic \ce{PM_{2.5}}, calculating it in the same manner as inorganic \ce{PM_{2.5}} is calculated in GEOS-Chem: 1.33*(NIT+NH3+SO4). 
