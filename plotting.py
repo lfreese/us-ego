@@ -298,6 +298,33 @@ def plot_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, figsize):
     fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
     cbar_ax.set_xlabel(r'$\frac{kg}{m^2s}$', fontsize = 14)
     
+def plot_percent_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, figsize):
+    fig, axes = plt.subplots(len(seasons), len(emissions), figsize = figsize, subplot_kw={'projection':ccrs.PlateCarree()})
+    for idx_spec, emission in enumerate(emissions):
+        for idx_season, season_val in enumerate(seasons):
+            ax = axes[idx_season, idx_spec]
+            q = ((ds1[emission].groupby('time.season').mean().sel(season = season_val) - ds2[emission].groupby('time.season').mean().sel(season = season_val))/(ds2[emission].groupby('time.season').mean().sel(season = season_val))).plot(
+                                                ax=ax, #set the axis
+                                                   levels = np.squeeze(levels), #set the levels for our colorbars
+                                                   extend='both',#extend the colorbar in both directions
+                                                  transform=ccrs.PlateCarree(), #fit data into map
+                                                add_colorbar = False,
+                                                    cmap='BrBG' #choose color for our colorbar
+            )  
+            ax.set_title(f'')
+            ax.add_feature(cfeat.STATES)
+            ax.coastlines() #add coastlines
+            ax.set_extent(lat_lon) #set a limit on the plot lat and lon)
+    axes[1,0].set_title(r'$NO_x$', fontsize = 14)
+    axes[1,1].set_title(r'$SO_2$', fontsize = 14)
+    pad = 5
+    axes[0,0].annotate('JJA', xy=(0.07, 0.65), xycoords = 'figure fraction', fontsize = 14)
+    axes[0,1].annotate('DJF', xy=(0.07, 0.25), xycoords = 'figure fraction', fontsize = 14)
+    fig.subplots_adjust(right=0.8)
+    # put colorbar at desire position
+    cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
+    fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
+    cbar_ax.set_xlabel('% change', fontsize = 14)
     
 def plant_region_plot(ds, xvariable, yvariable1, egrid, yvariable2, figsize, normal = True):
     fig, ax = plt.subplots(figsize=figsize)
