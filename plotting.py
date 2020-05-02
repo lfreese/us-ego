@@ -353,3 +353,58 @@ def fossil_fuel_plot(ds, sci_names, xvariable, pollutants, figsize, nonuc_color,
     plt.legend(custom_lines, ['No Nuclear', 'Normal'], bbox_to_anchor = [1.2, 1.0])
     plt.tight_layout()
         
+def isorropia_obs_model_plot(cdf, ds_isorropia, vmin, vmax, spacing, figsize = [8,20]):
+    fig, axes = plt.subplots(5, 2, figsize=figsize)
+    season_dict = {'DJF':[12,1,2],'JJA':[6,7,8]}
+    region_dict = {'NE_lat_lon':'NE', 'SW_lat_lon':'SW', 'MW_lat_lon':'MW', 'SE_lat_lon':'SE',
+           'NW_lat_lon':'NW'}
+    for idx_s, season in enumerate(['JJA','DJF']):
+        for idx_r, region in enumerate(region_dict.keys()):
+            ax = axes[idx_r, idx_s]
+            #plot isorropia data
+            q = ds_isorropia.sel(region_name = region_dict[region], season = season).PM.plot(ax = ax, cmap = 'BrBG_r', levels = np.arange(vmin,vmax,spacing), extend = 'max')
+
+            #plot model
+            x = cdf.loc[(cdf['species'] == 'NH4') & (cdf['Region'] == region) & (cdf['model'] == 'MODEL') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
+            y = cdf.loc[(cdf['species'] == 'NIT') & (cdf['Region'] == region) & (cdf['model'] == 'MODEL') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
+            z = cdf.loc[(cdf['species'] == 'PM25') & (cdf['Region'] == region) & (cdf['model'] == 'MODEL') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
+
+            ax.scatter(x, y, c = 'C1', cmap = 'Accent', marker = ">", vmin = vmin, vmax = vmax, label = 'Model');
+            
+            #plot observations
+            x2 = cdf.loc[(cdf['species'] == 'NH4') & (cdf['Region'] == region) & (cdf['model'] == 'IMPROVE') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
+            y2 = cdf.loc[(cdf['species'] == 'NIT') & (cdf['Region'] == region) & (cdf['model'] == 'IMPROVE') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
+            z2 = cdf.loc[(cdf['species'] == 'inorganic_PM') & (cdf['Region'] == region) & (cdf['model'] == 'IMPROVE') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
+            ax.scatter(x2, y2, c = 'C7', cmap = 'Accent',marker = 'v', vmin = vmin, vmax = vmax, label = 'IMPROVE Observations');
+            
+            #plot nonuc
+            x = cdf.loc[(cdf['species'] == 'NH4') & (cdf['Region'] == region) & (cdf['model'] == 'nonuc') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
+            y = cdf.loc[(cdf['species'] == 'NIT') & (cdf['Region'] == region) & (cdf['model'] == 'nonuc') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
+            z = cdf.loc[(cdf['species'] == 'PM25') & (cdf['Region'] == region) & (cdf['model'] == 'nonuc') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
+
+            ax.scatter(x, y, c = 'C0', cmap = 'Accent', marker = '<', vmin = vmin, vmax = vmax, label = 'Model');
+            #adjust x and y labels and limits
+            ax.set_xlabel(r'Total $SO_{4}^{2-} (\mu g/m^3)$');
+            ax.set_ylabel('Total $NO_{3} (\mu g/m^3)$');
+            ax.set_xlim([0,6])
+            ax.set_ylim([0,18])
+            ax.set_title(' ')
+    for idx_s, season in enumerate(['JJA','DJF']):
+        axes[0,idx_s].set_title(f'{season}', fontsize = 20, pad = 15)
+    for idx_r, region in enumerate(region_dict.keys()):
+        axes[idx_r, 0].annotate(f'{region_dict[region]}', xy=(-0.25, 0.8), xycoords = 'axes fraction', fontsize = 20)
+    fig.subplots_adjust(right=0.8)
+    # put colorbar at desire position
+    cbar_ax = fig.add_axes([0.2, -0.01, 0.5, 0.01]) # [left, bottom, width, height]
+    fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
+    cbar_ax.set_xlabel(r'$PM_{2.5} (\mu g/m^3)$', fontsize = 14)
+    #make custom legend
+    plt.scatter([], [], c='C1', marker = '>',
+                    label= 'Model')
+    plt.scatter([], [], c='C7', marker = 'v',
+                    label= 'IMPROVE')
+    plt.scatter([], [], c='C0', marker = '<',
+                    label= 'No Nuclear')
+    plt.legend(bbox_to_anchor=(1.4, 2))
+    #layout
+    plt.tight_layout()
