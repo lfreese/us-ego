@@ -384,15 +384,15 @@ def isorropia_obs_model_plot(cdf, ds_isorropia, vmin, vmax, spacing, figsize = [
 
             ax.scatter(x, y, c = 'C0', cmap = 'Accent', marker = '<', vmin = vmin, vmax = vmax, label = 'Model');
             #adjust x and y labels and limits
-            ax.set_xlabel(r'Total $SO_{4}^{2-} (\mu g/m^3)$');
+            ax.set_xlabel(r'Total $NH_{3} (\mu g/m^3)$');
             ax.set_ylabel('Total $NO_{3} (\mu g/m^3)$');
             ax.set_xlim([0,6])
-            ax.set_ylim([0,18])
+            ax.set_ylim([0,14])
             ax.set_title(' ')
     for idx_s, season in enumerate(['JJA','DJF']):
         axes[0,idx_s].set_title(f'{season}', fontsize = 20, pad = 15)
     for idx_r, region in enumerate(region_dict.keys()):
-        axes[idx_r, 0].annotate(f'{region_dict[region]}', xy=(-0.3, 0.8), xycoords = 'axes fraction', fontsize = 20)
+        axes[idx_r, 0].annotate(f'{region_dict[region]}', xy=(-0.35, 0.8), xycoords = 'axes fraction', fontsize = 20)
     fig.subplots_adjust(right=0.8)
     # put colorbar at desire position
     cbar_ax = fig.add_axes([0.2, -0.01, 0.5, 0.01]) # [left, bottom, width, height]
