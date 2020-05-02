@@ -392,7 +392,7 @@ def isorropia_obs_model_plot(cdf, ds_isorropia, vmin, vmax, spacing, figsize = [
     for idx_s, season in enumerate(['JJA','DJF']):
         axes[0,idx_s].set_title(f'{season}', fontsize = 20, pad = 15)
     for idx_r, region in enumerate(region_dict.keys()):
-        axes[idx_r, 0].annotate(f'{region_dict[region]}', xy=(-0.25, 0.8), xycoords = 'axes fraction', fontsize = 20)
+        axes[idx_r, 0].annotate(f'{region_dict[region]}', xy=(-0.3, 0.8), xycoords = 'axes fraction', fontsize = 20)
     fig.subplots_adjust(right=0.8)
     # put colorbar at desire position
     cbar_ax = fig.add_axes([0.2, -0.01, 0.5, 0.01]) # [left, bottom, width, height]
