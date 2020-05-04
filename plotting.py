@@ -64,11 +64,11 @@ def concentration_plot_seasonal_dif(ds, species_names, seasons, rows,
                        columns, figsize, levels,
                      cmap,
                        lat_lon, extension = 'both'):
-    fig, axes =  plt.subplots(len(seasons), len(species_names), figsize=figsize,subplot_kw={'projection':ccrs.PlateCarree()})
+    fig, axes =  plt.subplots(len(species_names), len(seasons), figsize=figsize,subplot_kw={'projection':ccrs.PlateCarree()})
     for idx_seas, season in enumerate(seasons):
         for idx_spec, species in enumerate(species_names):
 
-            ax = axes[idx_seas, idx_spec]
+            ax = axes[idx_spec, idx_seas]
 
         #make the plot
             q = ds[f'dif_{species}'].groupby('time.season').mean().sel(season = season).plot(ax=ax, #set the axis
@@ -84,9 +84,9 @@ def concentration_plot_seasonal_dif(ds, species_names, seasons, rows,
             ax.set_extent(lat_lon) #set a limit on the plot lat and lon
             ax.set_title(''); #title
     for idx_spec, species in enumerate(species_names):
-        axes[1,idx_spec].set_title(f'{proper_names_dict[species]}', fontsize = 14, pad = 15)
-    axes[0,0].annotate('JJA', xy=(0.06, 0.65), xycoords = 'figure fraction', fontsize = 14)
-    axes[0,1].annotate('DJF', xy=(0.06, 0.25), xycoords = 'figure fraction', fontsize = 14)
+        axes[idx_spec, 0].annotate(f'{proper_names_dict[species]}', xy=(-.1, 0.2), xycoords = 'axes fraction', fontsize = 14, rotation = 90)
+    axes[0,0].set_title('JJA', fontsize = 14)
+    axes[0,1].set_title('DJF', fontsize = 14)
     fig.subplots_adjust(right=0.8)
     # put colorbar at desire position
     cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
@@ -303,7 +303,7 @@ def plot_percent_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, fi
     for idx_spec, emission in enumerate(emissions):
         for idx_season, season_val in enumerate(seasons):
             ax = axes[idx_season, idx_spec]
-            q = ((ds2[emission].groupby('time.season').mean().sel(season = season_val) - ds1[emission].groupby('time.season').mean().sel(season = season_val))/(ds2[emission].groupby('time.season').mean().sel(season = season_val))).plot(
+            q = (((ds2[emission].groupby('time.season').mean().sel(season = season_val) - ds1[emission].groupby('time.season').mean().sel(season = season_val))/(ds2[emission].groupby('time.season').mean().sel(season = season_val)))*100).plot(
                                                 ax=ax, #set the axis
                                                    levels = np.squeeze(levels), #set the levels for our colorbars
                                                    extend='both',#extend the colorbar in both directions
