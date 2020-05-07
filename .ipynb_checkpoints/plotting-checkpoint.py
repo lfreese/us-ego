@@ -76,8 +76,6 @@ def concentration_plot_seasonal_dif(ds, species_names, seasons, rows,
                                        extend=extension,#extend the colorbar in both directions
                                        transform=ccrs.PlateCarree(), #fit data into map
                                         cmap=cmap, add_colorbar = False)  #choose color for our colorbar
-            if season == 'DJF' and species == 'O3':
-                plt
 
             ax.add_feature(cfeat.STATES)
             ax.coastlines() #add coastlines
@@ -271,7 +269,7 @@ def plot_emissions(ds, emission, season, levels):
     ax.set_extent(utils.lat_lon_dict['US_lat_lon']) #set a limit on the plot lat and lon)
 
 def plot_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, figsize):
-    fig, axes = plt.subplots(len(season), len(emissions), figsize = figsize, subplot_kw={'projection':ccrs.PlateCarree()})
+    fig, axes = plt.subplots(len(seasons), len(emissions), figsize = figsize, subplot_kw={'projection':ccrs.PlateCarree()})
     for idx_spec, emission in enumerate(emissions):
         for idx_season, season_val in enumerate(seasons):
             ax = axes[idx_season, idx_spec]
@@ -298,7 +296,7 @@ def plot_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, figsize):
     fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
     cbar_ax.set_xlabel(r'$\frac{kg}{m^2s}$', fontsize = 14)
     
-def plot_percent_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, figsize):
+def plot_percent_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, figsize = [16,5]):
     fig, axes = plt.subplots(len(seasons), len(emissions), figsize = figsize, subplot_kw={'projection':ccrs.PlateCarree()})
     for idx_spec, emission in enumerate(emissions):
         for idx_season, season_val in enumerate(seasons):
@@ -408,3 +406,17 @@ def isorropia_obs_model_plot(cdf, ds_isorropia, vmin, vmax, spacing, figsize = [
     plt.legend(bbox_to_anchor=(1.4, 2))
     #layout
     plt.tight_layout()
+
+def scatter_nitrate_plots(figsize, ds, season, x_species, y_species):
+    fig,ax = plt.subplots(figsize = figsize)
+    x = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'nonuc')[x_species]
+    y = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'nonuc')[y_species]
+    plt.plot(x,y, 'C0.', label = 'No Nuclear')
+    x1 = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'normal')[x_species]
+    y1 = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'normal')[y_species]
+    plt.plot(x1,y1, 'C1.', label = 'Normal')
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+    plt.xlabel(x_species, fontsize = 16)
+    plt.ylabel(y_species, fontsize = 16)
