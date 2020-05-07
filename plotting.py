@@ -407,7 +407,7 @@ def isorropia_obs_model_plot(cdf, ds_isorropia, vmin, vmax, spacing, figsize = [
     #layout
     plt.tight_layout()
 
-def scatter_nitrate_plots(figsize, ds, season, x_species, y_species):
+def scatter_nitrate_plots(figsize, poll_ds, season, x_species, y_species):
     fig,ax = plt.subplots(figsize = figsize)
     x = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'nonuc')[x_species]
     y = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'nonuc')[y_species]
@@ -418,5 +418,5 @@ def scatter_nitrate_plots(figsize, ds, season, x_species, y_species):
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
-    plt.xlabel(x_species, fontsize = 16)
-    plt.ylabel(y_species, fontsize = 16)
+    plt.xlabel(f'{x_species} {poll_ds[x_species].units}', fontsize = 16)
+    plt.ylabel(f'{y_species} {poll_ds[y_species].units}', fontsize = 16)
