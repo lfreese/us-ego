@@ -12,7 +12,7 @@ sys.path.append('/model_validation')
 species_dict = utils.species_dict
 
 levels_dict = {'PM25':np.arange(0., 40., .5), 'SO2':np.arange(0., 5., .1), 
-               'NO2':np.arange(0., 5., .1), 'NOx':np.arange(0., 10., .1), 'O3':np.arange(0., 45., 1.),
+               'NO2':np.arange(0., 5., .1), 'NOx':np.arange(0., 10., .1), 'O3':np.arange(0., 60., 1.),
                'dif':np.arange(-1., 1.01, .01), 'regional_dif':np.arange(-1.5, 1.51, .01), 'regional_dif_tight':np.arange(-.3, .31, .01),
               'percent_dif_full':np.arange(-100, 101, 1), 'percent_dif_tight':np.arange(-10,10.1,.1)}
 
@@ -22,7 +22,7 @@ def concentration_plot_annual(ds, species_names, model_names, rows,
                        columns, figsize, levels,
                      cmap,shrink_cbar,
                        lat_lon, extension = 'max'):
-    fig, axes =  plt.subplots(len(species_names), len(model_names), figsize=figsize,subplot_kw={'projection':ccrs.PlateCarree()})
+    fig, axes =  plt.subplots(len(species_names), len(model_names), figsize=figsize,subplot_kw={'projection':ccrs.LambertConformal()})
     for idx_m, model in enumerate(model_names):
         for idx_s, species in enumerate(species_names):
             ax = axes[idx_s,idx_m]        
@@ -43,7 +43,7 @@ def concentration_plot_annual(ds, species_names, model_names, rows,
 def concentration_plot_seasonal(ds, species_names, season, model_names, figsize,
                        cmap,shrink_cbar,
                        lat_lon, extension = 'max'):
-    fig, axes =  plt.subplots(len(species_names), len(model_names), figsize=figsize,subplot_kw={'projection':ccrs.PlateCarree()})
+    fig, axes =  plt.subplots(len(species_names), len(model_names), figsize=figsize,subplot_kw={'projection':ccrs.LambertConformal()})
     for idx_m, model in enumerate(model_names):
         for idx_s, species in enumerate(species_names):
             ax = axes[idx_s,idx_m]        
@@ -64,7 +64,7 @@ def concentration_plot_seasonal_dif(ds, species_names, seasons, rows,
                        columns, figsize, levels,
                      cmap,
                        lat_lon, extension = 'both'):
-    fig, axes =  plt.subplots(len(species_names), len(seasons), figsize=figsize,subplot_kw={'projection':ccrs.PlateCarree()})
+    fig, axes =  plt.subplots(len(species_names), len(seasons), figsize=figsize,subplot_kw={'projection':ccrs.LambertConformal()})
     for idx_seas, season in enumerate(seasons):
         for idx_spec, species in enumerate(species_names):
 
@@ -90,13 +90,13 @@ def concentration_plot_seasonal_dif(ds, species_names, seasons, rows,
     cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
     fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
 
-def ratio_plot(ds, species, model_names, rows, 
+def ratio_plot(ds, season, species, model_names, rows, 
                        columns, figsize, levels,
-                       season, cmap,shrink_cbar,
+                       cmap,shrink_cbar,
                        lat_lon, extension = 'max'):
     fig = plt.figure(figsize=figsize)
     for idx_m, model in enumerate(model_names):
-            ax = fig.add_subplot(rows,columns,idx_m+1, projection=ccrs.PlateCarree())
+            ax = fig.add_subplot(rows,columns,idx_m+1, projection=ccrs.LambertConformal())
         
             #make the plot
             q = ds[f'{species}'].groupby('time.season').mean(dim = 'time').sel(model_name = model, season = season).plot(ax=ax, #set the axis
@@ -126,7 +126,7 @@ def obs_model_plot(ds, df, species,model_names,
 
     for idx, model in enumerate(model_names):
         ###### Create axes ######
-        ax=fig.add_subplot(rows,columns, idx +1, projection=ccrs.PlateCarree())
+        ax=fig.add_subplot(rows,columns, idx +1, projection=ccrs.LambertConformal())
         ax.coastlines()
         ax.add_feature(cfeat.STATES)
         
@@ -157,7 +157,7 @@ def obs_plot(df,species, month,
     fig = plt.figure(figsize=figsize)
 
     ###### Create axes ######
-    ax=fig.add_subplot(1,1,1, projection=ccrs.PlateCarree())
+    ax=fig.add_subplot(1,1,1, projection=ccrs.LambertConformal())
     ax.coastlines()
     ax.add_feature(cfeat.STATES)
         
@@ -240,7 +240,7 @@ def hist_obs_interp(df, model_names, colors_dict, bins, species_list, rows, colu
 def monthly_mean(ds, species, levels):
     fig = plt.figure(figsize=[24,18])
     for idx, m in enumerate(range(1,13)):
-        ax = fig.add_subplot(4,3,idx+1,projection=ccrs.PlateCarree())
+        ax = fig.add_subplot(4,3,idx+1,projection=ccrs.LambertConformal())
         ds[f'{species}'].groupby('time.month').mean().sel(month = m).plot(ax=ax, #set the axis
                                         levels = np.squeeze(levels), #set the levels for our colorbars
                                        extend='max',#extend the colorbar in both directions
@@ -256,7 +256,7 @@ def monthly_mean(ds, species, levels):
         
 def plot_emissions(ds, emission, season, levels):
     fig = plt.figure(figsize = [12,9])
-    ax = fig.add_subplot(projection=ccrs.PlateCarree())
+    ax = fig.add_subplot(projection=ccrs.LambertConformal())
     ds[emission].groupby('time.season').mean().sel(season = season).plot(ax=ax, #set the axis
                                            levels = np.squeeze(levels), #set the levels for our colorbars
                                            extend='max',#extend the colorbar in both directions
@@ -269,7 +269,7 @@ def plot_emissions(ds, emission, season, levels):
     ax.set_extent(utils.lat_lon_dict['US_lat_lon']) #set a limit on the plot lat and lon)
 
 def plot_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, figsize):
-    fig, axes = plt.subplots(len(seasons), len(emissions), figsize = figsize, subplot_kw={'projection':ccrs.PlateCarree()})
+    fig, axes = plt.subplots(len(seasons), len(emissions), figsize = figsize, subplot_kw={'projection':ccrs.LambertConformal()})
     for idx_spec, emission in enumerate(emissions):
         for idx_season, season_val in enumerate(seasons):
             ax = axes[idx_season, idx_spec]
@@ -297,7 +297,7 @@ def plot_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, figsize):
     cbar_ax.set_xlabel(r'$\frac{kg}{m^2s}$', fontsize = 14)
     
 def plot_percent_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, figsize = [16,5]):
-    fig, axes = plt.subplots(len(seasons), len(emissions), figsize = figsize, subplot_kw={'projection':ccrs.PlateCarree()})
+    fig, axes = plt.subplots(len(seasons), len(emissions), figsize = figsize, subplot_kw={'projection':ccrs.LambertConformal()})
     for idx_spec, emission in enumerate(emissions):
         for idx_season, season_val in enumerate(seasons):
             ax = axes[idx_season, idx_spec]
@@ -316,8 +316,8 @@ def plot_percent_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, fi
     axes[1,0].set_title(r'$NO_x$', fontsize = 14)
     axes[1,1].set_title(r'$SO_2$', fontsize = 14)
     pad = 5
-    axes[0,0].annotate('JJA', xy=(0.07, 0.65), xycoords = 'figure fraction', fontsize = 14)
-    axes[0,1].annotate('DJF', xy=(0.07, 0.25), xycoords = 'figure fraction', fontsize = 14)
+    axes[0,0].annotate('JJA', xy=(0.06, 0.65), xycoords = 'figure fraction', fontsize = 14)
+    axes[0,1].annotate('DJF', xy=(0.06, 0.25), xycoords = 'figure fraction', fontsize = 14)
     fig.subplots_adjust(right=0.8)
     # put colorbar at desire position
     cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
