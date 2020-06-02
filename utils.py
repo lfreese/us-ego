@@ -1,6 +1,7 @@
 import xarray as xr
 from scipy import stats
 import pandas as pd
+import numpy as np
 
 lat_lon_dict = {
 'US_lat_lon':[-130.0, -60.0, 24.0, 45.0],
@@ -13,34 +14,98 @@ lat_lon_dict = {
 }
 month_string = ['01','02','03','04','05','06','07','08','09','10','11','12']
 species_dict = {'PM25':'PM2.5 - Local Conditions', 'SO2':'Sulfur dioxide', 'NO2':'Nitrogen dioxide (NO2)', 'O3':'Ozone', 'NOx':'Nitrogen Oxides (NO2+NO)'}
+#list of all gas species
+gas_species_list = [ 
+    'NO',
+    'NO2',
+    'SO2',
+    'O3',
+    'CH2O',
+    'NOx',
+    'NH3', 
+    'NO3',
+    'HNO3',
+    'SO4s',
+    'SO4',
+    'H2O2'
+]
+#dict of all aerosol/PM contributing species and their mw
+aerosol_species_dict = {
+    'NH4': 18.,
+    'NIT': 62.,
+    'SO4': 96.,
+    'BCPI': 12.,
+    'OCPI': 12.,
+    'BCPO': 12.,
+    'OCPO': 12.,
+    'DST1': 29.,
+    'DST2': 29.,
+    'SALA': 31.4,
+    'HNO3': 63.01,
+    'NH3' : 17.031
+}
 
-def import_GC_runs_general(ds_name, path, aerosol_output, speciesconc_output, name):
+def import_GC_runs_general(path, speciesconc_output, aerosol_output, name):
+    '''Import and name a Geos Chem run based on the path and the aerosol and species concentration files'''
     ds_speciesconc = xr.open_mfdataset(path+speciesconc_output, combine='by_coords')
     ds_aerosolmass = xr.open_mfdataset(path+aerosol_output,combine='by_coords')
     ds_name = xr.merge([ds_aerosolmass, ds_speciesconc])
     ds_name.attrs['name'] = name
     return (ds_name)
 
-def import_GC_runs(egrid_path, NEI_path, MODEL_path, aerosol_output, speciesconc_output):
-    ds_egrid_speciesconc = xr.open_mfdataset(egrid_path+speciesconc_output, combine='by_coords')
-    ds_egrid_aerosolmass = xr.open_mfdataset(egrid_path+aerosol_output,combine='by_coords')
-    ds_egrid = xr.merge([ds_egrid_aerosolmass, ds_egrid_speciesconc])
-    ds_egrid.attrs['name'] = 'egrid'
-
-    ds_NEI_speciesconc = xr.open_mfdataset(NEI_path+speciesconc_output,combine='by_coords')
-    ds_NEI_aerosolmass = xr.open_mfdataset(NEI_path+aerosol_output, combine = 'by_coords')
-    ds_NEI = xr.merge([ds_NEI_aerosolmass, ds_NEI_speciesconc])
-    ds_NEI.attrs['name'] = 'NEI'
-
-    ds_MODEL_speciesconc = xr.open_mfdataset(MODEL_path+speciesconc_output,combine='by_coords')
-    ds_MODEL_aerosolmass = xr.open_mfdataset(MODEL_path+aerosol_output,combine='by_coords')
-    ds_MODEL = xr.merge([ds_MODEL_aerosolmass, ds_MODEL_speciesconc])
-    ds_MODEL.attrs['name'] = 'MODEL'
+def combine_and_convert_ds(gas_species_list, aerosol_species_list, datasets_to_combine, index_names, model_names_no_reference,reference_model_name, ds_final_name):
+    '''Combine geos chem datasets, choose which species will be in the dataset, and convert mol/mol to ppbv'''
+    #list of all names of species we will keep
+    species_conc_species = list(gas_species_list) + list(aerosol_species_list)
+    species_conc_species = list(np.unique(species_conc_species))
+    all_species = species_conc_species + ['PM25']
     
-    return(ds_egrid, ds_NEI, ds_MODEL)
+    #combine our two datasets into one, with model as an index
+    ds = xr.concat(datasets_to_combine, pd.Index(index_names, name='model_name'))
+    #sum our NO2 and NO to get NOx
+    ds['SpeciesConc_NOx'] = (
+        ds['SpeciesConc_NO'] + ds['SpeciesConc_NO2']
+                   )
+    
 
+    #drop anything not in our list of species, and rename to drop the 'speciesconc'
+    poll_ds = ds.rename({'SpeciesConc_' + spec: spec for spec in species_conc_species})
+    poll_ds = poll_ds.drop_vars([species for species in poll_ds.data_vars if species not in all_species])
 
+    #convert all but PM to ppbv
+    for species in gas_species_list or aerosol_species_list:
+        poll_ds[f'{species}'] *= 1e9 #convert from mol/mol to ppbv
+        poll_ds[f'{species}'].attrs['units'] = 'ppbv'
 
+    #calculate the NO2/CH2O ratio    
+    poll_ds[f'CH2O_NO2'] = poll_ds['CH2O']/poll_ds['NO2']
+    poll_ds[f'CH2O_NO2'].attrs['units'] = 'Ratio CH2O/NO2'
+
+    #calculate the H2O2/HNO3 ratio    
+    poll_ds[f'H2O2_HNO3'] = poll_ds['H2O2']/poll_ds['HNO3']
+    poll_ds[f'H2O2_HNO3'].attrs['units'] = 'Ratio H2O2/HNO3'
+
+    for new_model_name in model_names_no_reference:
+        poll_ds = dif_between_models(poll_ds, new_model_name, reference_model_name, all_species)
+    #select ground level
+    poll_ds = poll_ds.isel(lev = 0)
+
+    #name dataset
+    poll_ds.attrs['name'] = ds_final_name
+    return(poll_ds)
+
+def dif_between_models(poll_ds, new_model_name, reference_model_name, species_list):
+    
+    for species in species_list:
+        #calculate the differences for species
+            poll_ds[f'dif_{new_model_name}-{reference_model_name}_{species}'] = poll_ds.sel(model_name = new_model_name)[f'{species}'] - poll_ds.sel(model_name = reference_model_name)[f'{species}']
+            poll_ds[f'dif_{new_model_name}-{reference_model_name}_{species}'].attrs['units'] = poll_ds.sel(model_name = new_model_name)[f'{species}'].attrs['units']
+
+            #calculate the percent differences for species
+            poll_ds[f'percent_dif_{new_model_name}-{reference_model_name}_{species}'] = (poll_ds[f'dif_{new_model_name}-{reference_model_name}_{species}']/poll_ds.sel(model_name = reference_model_name)[f'{species}'])*100
+            poll_ds[f'percent_dif_{new_model_name}-{reference_model_name}_{species}'].attrs['units'] = 'Percent Difference'
+    return(poll_ds)
+            
 def linregress_data(obs_df, interp_df, model_names, month_string, species_list):
     result = [stats.linregress(
             x = obs_df.loc[
@@ -70,6 +135,7 @@ def interp_obs_differences(EPA_obs_df, interp_df, month_string, model_names, spe
     return(EPA_interp_dif)
 
 def ppb_to_ug(ds, species_to_convert, mw_species_list, stp_p = 101325, stp_t = 298.):
+    '''Convert species to ug/m3 from ppb'''
     R = 8.314 #J/K/mol
     ppb_ugm3 = (stp_p * 1e6 / stp_t / R) #Pa/K/(J/K/mol) = g/m^3
 
@@ -78,10 +144,51 @@ def ppb_to_ug(ds, species_to_convert, mw_species_list, stp_p = 101325, stp_t = 2
         ds[spec] = ds[spec]*mw_species_list[spec]*ppb_ugm3 #ppb*g/mol*g/m^3
         ds[spec].attrs['units'] = 'μg m-3'
     return(ds)
+
+def import_and_edit_EPAobs(path):
+    '''Import EPA observational data and drop un-needed columns, round Latitude and Longitude, convert to datetime, select only one of the SO2 standards, convert ozone to ppb'''
+    EPA_obs_df = pd.concat(map(pd.read_csv, glob.glob(path)))
+    EPA_obs_df['date'] = pd.to_datetime(EPA_obs_df['Date Local'])
+    EPA_obs_df['date'] = EPA_obs_df['date'].dt.normalize() + timedelta(hours=12)
+    EPA_obs_df['Longitude'] = np.round(EPA_obs_df['Longitude'], decimals = 8)
+    EPA_obs_df['Latitude'] = np.round(EPA_obs_df['Latitude'], decimals = 8)
+
+    EPA_obs_df = EPA_obs_df.drop(columns = ['State Code','County Code','Site Num','Parameter Code','POC','Datum','Sample Duration','Date Local', 'Event Type',
+           'Observation Count', 'Observation Percent','1st Max Value', '1st Max Hour', 'Address', 'County Name', 'City Name',
+           'CBSA Name', 'Date of Last Change', 'Method Name'])
+
+    #only use the SO2 1 hour 2010 pollutant standard arithmetic means and drop the 3-hour 1971 arithmetic means
+    EPA_obs_df = EPA_obs_df.loc[~(EPA_obs_df['Pollutant Standard'] == 'SO2 3-hour 1971')]
+    EPA_obs_df = EPA_obs_df.rename(columns = {'Parameter Name':'species'})
+
+    #convert Ozone to ppb
+    EPA_obs_df.loc[EPA_obs_df['species'] == 'Ozone','Arithmetic Mean'] *= 1e3 #ppb
+    EPA_obs_df = EPA_obs_df.loc[~(EPA_obs_df['Arithmetic Mean'] <= 0)]
+    return(EPA_obs_df)
         
-def open_ISORROPIA(DJF_path, JJA_path, region_name):
-    DJF_ds = xr.open_dataset(DJF_path)
-    JJA_ds = xr.open_dataset(JJA_path)
-    ds_out = xr.concat([DJF_ds, JJA_ds], pd.Index(['DJF', 'JJA'], name='season'))
+def import_IMPROVE(path, species, short_name):
+    df = pd.read_fwf(path)
+    df['species'] = species
+    if species == 'NH4':
+        df['Arithmetic Mean'] = df['ammNO3f:Value'] + df['ammSO4f:Value']
+        df = df.rename(columns = {'ammNO3f:Unit': 'Unit'})
+        df = df.drop(columns = {'NH4f:Value','NH4f:Unc','NH4f:Unit','ammNO3f:Value','ammNO3f:Unc','ammSO4f:Value', 'ammSO4f:Unit',
+                                            'ammSO4f:Unc'})
+    elif species == 'OC_EC':
+        df['Arithmetic Mean'] = df['ECf:Value'] + df['OCf:Value']
+        df['Unit'] = df['OCf:Unit']
+        df['species'] = 'OC_EC'
+        df = df.drop(columns = {'ECf:Value','ECf:Unit','OCf:Value','OCf:Unit'})
+    else:
+        df = df.rename(columns = {f'{short_name}:Value':'Arithmetic Mean', f'{short_name}:Unc': 'Uncertainty', f'{short_name}:Unit': 'Unit'})
+    return(df)
+    
+def open_ISORROPIA(season1, season2, season_names, region_name, two_seasons = True):
+    season1_ds = xr.open_dataset(season1)
+    if two_seasons == True:
+        season2_ds = xr.open_dataset(season2)
+        ds_out = xr.concat([season1_ds, season2_ds], pd.Index(season_names, name='season'))
+    else:
+        ds_out = season1_ds
     ds_out.attrs['region_name'] = region_name
     return(ds_out)
