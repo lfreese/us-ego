@@ -33,3 +33,11 @@ NEI_validation.ipynb for a monthly validation to compare to NEI_2016 (data from 
 To get the data in a format readable by GEOS-Chem, with access to a slurm run sbatch opt_output_to_inventory.py
 
 Additional notes: test_run_opt.ipynb is the draft Julia optmization script
+
+## Data Sources
+Sources for all raw data are listed below. The input files are modified, as many have taken tables and turned them into CSV files. 
+1. Cost data: https://www.eia.gov/electricity/data/eia860/ EIA form 860
+2. Solar Renewable CF: https://www.epa.gov/airmarkets/power-sector-modeling-platform-v515 Table 4-28 
+3. Wind Renewable CF: https://www.epa.gov/airmarkets/power-sector-modeling-platform-v515 Table 4-20
+4. Load/Demand data: https://www.eia.gov/todayinenergy/detail.php?id=27212 EIA930_BALANCE_2016 form for both Jan-Jun and Jul-Dec
+5. Capacity/Emissions factors: https://www.epa.gov/energy/emissions-generation-resource-integrated-database-egrid (historical data, 2016)
