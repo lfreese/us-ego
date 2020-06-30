@@ -1,0 +1,26 @@
+name: grid_model
+channels:
+  - conda-forge
+dependencies:
+  - cdo
+  - xlrd
+  - esmpy
+  - dask
+  - python
+  - jupyter
+  - jupyterlab
+  - xarray
+  - numpy
+  - pandas
+  - matplotlib
+  - rasterio
+  - gdal
+  - seaborn
+  - cartopy
+  - scipy
+  - netCDF4
+  - regionmask
+  - geopandas
+  - zarr
+  - xesmf
+  - feather-format
