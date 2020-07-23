@@ -1,9 +1,0 @@
-{
-    "_ARRAY_DIMENSIONS": [],
-    "axis": "Z",
-    "formula_terms": "a: hyai b: hybi p0: P0 ps: PS",
-    "long_name": "hybrid level at midpoints ((A/P0)+B)",
-    "positive": "up",
-    "standard_name": "atmosphere_hybrid_sigma_pressure_coordinate",
-    "units": "level"
-}

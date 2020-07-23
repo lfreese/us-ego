@@ -2,6 +2,9 @@ import xarray as xr
 from scipy import stats
 import pandas as pd
 import numpy as np
+import glob
+from datetime import datetime, timedelta 
+import geopandas
 
 lat_lon_dict = {
 'US_lat_lon':[-130.0, -60.0, 24.0, 45.0],
@@ -25,24 +28,21 @@ gas_species_list = [
     'NH3', 
     'NO3',
     'HNO3',
-    'SO4s',
-    'SO4',
     'H2O2'
 ]
 #dict of all aerosol/PM contributing species and their mw
 aerosol_species_dict = {
-    'NH4': 18.,
-    'NIT': 62.,
-    'SO4': 96.,
-    'BCPI': 12.,
-    'OCPI': 12.,
-    'BCPO': 12.,
-    'OCPO': 12.,
-    'DST1': 29.,
-    'DST2': 29.,
-    'SALA': 31.4,
-    'HNO3': 63.01,
-    'NH3' : 17.031
+    'NH4': 18.039,
+    'NIT': 62.0049,
+    'SO4': 96.06
+    #'BCPI': 12.,
+    #'OCPI': 12.,
+    #'BCPO': 12.,
+    #'OCPO': 12.,
+    #'DST1': 29.,
+    #'DST2': 29.,
+    #'SALA': 31.4,
+
 }
 
 def import_GC_runs_general(path, speciesconc_output, aerosol_output, name):
@@ -53,27 +53,30 @@ def import_GC_runs_general(path, speciesconc_output, aerosol_output, name):
     ds_name.attrs['name'] = name
     return (ds_name)
 
-def combine_and_convert_ds(gas_species_list, aerosol_species_list, datasets_to_combine, index_names, model_names_no_reference,reference_model_name, ds_final_name):
-    '''Combine geos chem datasets, choose which species will be in the dataset, and convert mol/mol to ppbv'''
+def combine_and_convert_ds(gas_species_list, aerosol_species_list, datasets_to_combine, index_names, model_names_no_reference, reference_model_name, ds_final_name):
+    '''Combine geos chem datasets, choose which species will be in the dataset, and convert mol/mol to ppbv
+    Includes create a H2O2/HNO3 and CH2O/NO2 ratio
+    returns a pollution dataset with all species listed in proper units'''
     #list of all names of species we will keep
-    species_conc_species = list(gas_species_list) + list(aerosol_species_list)
-    species_conc_species = list(np.unique(species_conc_species))
-    all_species = species_conc_species + ['PM25']
+    all_aerosol_species_list = list(aerosol_species_list) + ['PM25', 'TotalOC','TotalOA','AerMassBC']
+    all_species = list(gas_species_list) + list(all_aerosol_species_list)
     
     #combine our two datasets into one, with model as an index
     ds = xr.concat(datasets_to_combine, pd.Index(index_names, name='model_name'))
+    
     #sum our NO2 and NO to get NOx
     ds['SpeciesConc_NOx'] = (
         ds['SpeciesConc_NO'] + ds['SpeciesConc_NO2']
                    )
     
+    #drop anything not in our list of species, and rename to drop the 'speciesconc' and 'aermass'
+    poll_ds = ds.rename({'SpeciesConc_' + spec: spec for spec in gas_species_list})
+    poll_ds = poll_ds.rename({'AerMass' + spec: spec for spec in aerosol_species_list})
 
-    #drop anything not in our list of species, and rename to drop the 'speciesconc'
-    poll_ds = ds.rename({'SpeciesConc_' + spec: spec for spec in species_conc_species})
     poll_ds = poll_ds.drop_vars([species for species in poll_ds.data_vars if species not in all_species])
 
     #convert all but PM to ppbv
-    for species in gas_species_list or aerosol_species_list:
+    for species in gas_species_list:
         poll_ds[f'{species}'] *= 1e9 #convert from mol/mol to ppbv
         poll_ds[f'{species}'].attrs['units'] = 'ppbv'
 
@@ -164,6 +167,14 @@ def import_and_edit_EPAobs(path):
     #convert Ozone to ppb
     EPA_obs_df.loc[EPA_obs_df['species'] == 'Ozone','Arithmetic Mean'] *= 1e3 #ppb
     EPA_obs_df = EPA_obs_df.loc[~(EPA_obs_df['Arithmetic Mean'] <= 0)]
+    
+    #rename pollutants to shortened names
+    for species in ['PM25', 'SO2', 'NO2', 'O3']:
+        EPA_obs_df.loc[(EPA_obs_df['species'] == species_dict[species]), 'species'] = species
+    
+    #limit to just contiguous US (leaving out HI and AL)
+    EPA_obs_df = EPA_obs_df.loc[(EPA_obs_df['Latitude'].between(24,50,inclusive = True)) & (EPA_obs_df['Longitude'].between(-130,-60,inclusive = True))]
+
     return(EPA_obs_df)
         
 def import_IMPROVE(path, species, short_name):
@@ -175,7 +186,7 @@ def import_IMPROVE(path, species, short_name):
         df = df.drop(columns = {'NH4f:Value','NH4f:Unc','NH4f:Unit','ammNO3f:Value','ammNO3f:Unc','ammSO4f:Value', 'ammSO4f:Unit',
                                             'ammSO4f:Unc'})
     elif species == 'OC_EC':
-        df['Arithmetic Mean'] = df['ECf:Value'] + df['OCf:Value']
+        df['Arithmetic Mean'] = df['OCf:Value']
         df['Unit'] = df['OCf:Unit']
         df['species'] = 'OC_EC'
         df = df.drop(columns = {'ECf:Value','ECf:Unit','OCf:Value','OCf:Unit'})

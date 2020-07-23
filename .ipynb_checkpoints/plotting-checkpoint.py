@@ -12,6 +12,8 @@ nonuc_color = 'C1'
 normal_color = 'C0'
 egrid_color = 'C7'
 
+lat_lon = [-120,-70,20,50]
+
 import sys
 sys.path.append('/model_validation')
 species_dict = utils.species_dict
@@ -242,7 +244,7 @@ def hist_obs_interp(df, model_names, colors_dict, bins, species_list, rows, colu
     plt.tight_layout()
     
 
-def monthly_mean(ds, species, levels):
+def monthly_mean(ds, species, levels, lat_lon):
     fig = plt.figure(figsize=[24,18])
     for idx, m in enumerate(range(1,13)):
         ax = fig.add_subplot(4,3,idx+1,projection=ccrs.LambertConformal())
@@ -255,12 +257,12 @@ def monthly_mean(ds, species, levels):
 
         ax.add_feature(cfeat.STATES)
         ax.coastlines() #add coastlines
-        ax.set_extent(utils.lat_lon_dict['US_lat_lon']) #set a limit on the plot lat and lon)
+        ax.set_extent(lat_lon) #set a limit on the plot lat and lon)
         plt.title(f'{species} in {m}')
         
         
-def plot_emissions(ds, emission, season, levels):
-    fig = plt.figure(figsize = [12,9])
+def plot_emissions(ds, emission, season, levels, lat_lon, figsize = [12,9]):
+    fig = plt.figure(figsize = figsize)
     ax = fig.add_subplot(projection=ccrs.LambertConformal())
     ds[emission].groupby('time.season').mean().sel(season = season).plot(ax=ax, #set the axis
                                            levels = np.squeeze(levels), #set the levels for our colorbars
@@ -271,7 +273,7 @@ def plot_emissions(ds, emission, season, levels):
 
     ax.add_feature(cfeat.STATES)
     ax.coastlines() #add coastlines
-    ax.set_extent(utils.lat_lon_dict['US_lat_lon']) #set a limit on the plot lat and lon)
+    ax.set_extent(lat_lon) #set a limit on the plot lat and lon)
 
 def plot_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, figsize):
     fig, axes = plt.subplots(len(seasons), len(emissions), figsize = figsize, subplot_kw={'projection':ccrs.LambertConformal()})
@@ -329,25 +331,27 @@ def plot_percent_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, fi
     fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
     cbar_ax.set_xlabel('% change', fontsize = 14)
     
-def plant_region_plot(ds, xvariable, yvariable1, egrid, yvariable2, figsize, normal = True):
+def plant_region_plot(ds, xvariable, yvariable1, egrid, egrid_yvariable, figsize, normal = True):
     fig, ax = plt.subplots(figsize=figsize)
     width = 0.3
-    plt.bar(ds['nonuc'][xvariable], ds['nonuc'][yvariable1], color = nonuc_color, width = width, align="edge", label = 'No Nuclear')
+    plt.bar(ds.sel(model_name = 'nonuc')[xvariable], ds.sel(model_name = 'nonuc')[yvariable1], color = nonuc_color, width = width, align="edge", label = 'No Nuclear')
     if egrid == True:
-        plt.bar(ds['normal'][xvariable], ds['normal'][yvariable2], color = egrid_color, width = -width, align="edge", label = 'Egrid')
+        plt.bar(ds.sel(model_name = 'normal')[xvariable], ds.sel(model_name = 'normal')[egrid_yvariable], color = egrid_color, width = -width, align="edge", label = 'Egrid')
     if normal == True:
-        plt.bar(ds['normal'][xvariable], ds['normal'][yvariable1], color = normal_color, width = width, align="center", label = 'Normal Model')
+        plt.bar(ds.sel(model_name = 'normal')[xvariable], ds.sel(model_name = 'normal')[yvariable1], color = normal_color, width = width, align="center", label = 'Normal Model')
     plt.xticks(rotation = 45)
     ax.legend();
     
-def fossil_fuel_plot(ds, sci_names, xvariable, pollutants, figsize, nonuc_color, normal_color, normal = True):
+def fossil_fuel_plot(ds, sci_names, xvariable, pollutants, figsize, nonuc_color, normal_color,egrid_color, normal = True, egrid = True):
     fig,axes = plt.subplots(1, len(pollutants), figsize=figsize)
     for idx_p, pollutant in enumerate(pollutants):
         ax = axes[idx_p]
         width = 0.3
-        ax.bar(ds['nonuc'].sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds['nonuc'].sel(fueltype = ['Coal', 'NaturalGas'])[f'annual_{pollutant}']*3600/1000, color = nonuc_color, width = width, align="edge", label = 'No Nuclear')
+        ax.bar(ds.sel(model_name = 'nonuc').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'nonuc').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = nonuc_color, width = width, align="edge", label = 'No Nuclear')
         if normal == True:
-            ax.bar(ds['normal'].sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds['normal'].sel(fueltype = ['Coal', 'NaturalGas'])[f'annual_{pollutant}']*3600/1000, color = normal_color, width = width, align="center", label = 'Normal Model')
+            ax.bar(ds.sel(model_name = 'normal').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'normal').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = normal_color, width = width, align="center", label = 'Normal Model')
+        if egrid == True:
+            ax.bar(ds.sel(model_name = 'normal').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'normal').sel(fueltype = ['Coal', 'NaturalGas'])[f'egrid_annual_{pollutant}_conc']/1000, color = egrid_color, width = -width, align="edge", label = 'Egrid')
         ax.set_title(f'{sci_names[pollutant]}', fontsize = 20);
     axes[2].set_xlabel('Fuel Type', fontsize = 14)
     axes[0].set_ylabel(f'Emissions (metric tons)', fontsize = 14)
