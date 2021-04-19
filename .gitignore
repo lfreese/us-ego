@@ -1,3 +1,4 @@
+*.nc
 *.xlsx
 *.shp
 *.shx
@@ -26,3 +27,4 @@ ego_nonuclear_project/nonuc_normal_GC.nc4
 ego_nonuclear_project/nonuc_normal_GC/
 model_validation/GC_ds.nc4
 model_validation/GC_ds_old.nc4
+ego_nonuclear_project/data
