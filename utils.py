@@ -108,6 +108,38 @@ def dif_between_models(poll_ds, new_model_name, reference_model_name, species_li
             poll_ds[f'percent_dif_{new_model_name}-{reference_model_name}_{species}'] = (poll_ds[f'dif_{new_model_name}-{reference_model_name}_{species}']/poll_ds.sel(model_name = reference_model_name)[f'{species}'])*100
             poll_ds[f'percent_dif_{new_model_name}-{reference_model_name}_{species}'].attrs['units'] = 'Percent Difference'
     return(poll_ds)
+
+def combine_egrid_generation(oris_ds, gen_ds, egrid_ds):   
+    #create a capacity, fueltype, and regionname grouped by ORISCode
+    capacity = oris_ds.groupby('ORISCode').sum()['Capacity']
+    fueltype = oris_ds.to_dataframe().groupby('ORISCode').first()['FuelType']
+    regionname = oris_ds.to_dataframe().groupby('ORISCode').first()['RegionName']
+    #group by ORIS code and take the mean of everything but capacity
+    oris_ds = oris_ds.groupby('ORISCode').mean().drop('Capacity')
+    #rename our generation variable
+    gen_ds = gen_ds.rename('modelgeneration')
+
+    ###concatenate the generation and ORIS files
+    gmodel_oris_ds = xr.merge([gen_ds, oris_ds])
+    #add in the capacity
+    gmodel_oris_ds['Capacity'] = capacity
+    #create a column for capacity factors
+    gmodel_oris_ds['model_capafactor'] = 100 * gmodel_oris_ds['modelgeneration'] / (gmodel_oris_ds['Capacity'] * 8760) # % generation for each year's total capacity
+    
+    ###concatenate our model/oris and egrid emissions dataframes into one, grouped by ORIS code
+    gmodel_egrid_ds = xr.merge([gmodel_oris_ds, egrid_ds])
+    #turn all zeroes (just in the modelgeneration) to NAN
+    gmodel_egrid_ds.where('modelgeneration' == 0)['modelgeneration'] = np.nan
+    #rename the egrid data column for ease
+    gmodel_egrid_ds = gmodel_egrid_ds.rename({'Generator annual net generation (MWh)':'annual_egridgeneration'})
+    #add in fueltype
+    gmodel_egrid_ds['fueltype'] = fueltype
+    gmodel_egrid_ds = gmodel_egrid_ds.set_coords('fueltype')
+    #add in region name
+    gmodel_egrid_ds['regionname'] = regionname
+    gmodel_egrid_ds = gmodel_egrid_ds.set_coords('regionname')
+    return(gmodel_egrid_ds)
+    
             
 def linregress_data(obs_df, interp_df, model_names, month_string, species_list):
     result = [stats.linregress(

@@ -78,7 +78,7 @@ def concentration_plot_seasonal_dif(ds, species_names, seasons, rows,
             ax = axes[idx_spec, idx_seas]
 
         #make the plot
-            q = ds[f'dif_{species}'].groupby('time.season').mean().sel(season = season).plot(ax=ax, #set the axis
+            q = ds[f'dif_nonuc_model-normal_model_{species}'].groupby('time.season').mean().sel(season = season).plot(ax=ax, #set the axis
                                        levels = np.squeeze(levels), #set the levels for our colorbars
                                        extend=extension,#extend the colorbar in both directions
                                        transform=ccrs.PlateCarree(), #fit data into map
@@ -334,30 +334,31 @@ def plot_percent_emissions_dif(ds1, ds2, emissions, seasons, levels, lat_lon, fi
 def plant_region_plot(ds, xvariable, yvariable1, egrid, egrid_yvariable, figsize, normal = True):
     fig, ax = plt.subplots(figsize=figsize)
     width = 0.3
-    plt.bar(ds.sel(model_name = 'nonuc')[xvariable], ds.sel(model_name = 'nonuc')[yvariable1], color = nonuc_color, width = width, align="edge", label = 'No Nuclear')
+    plt.bar(ds.sel(model_name = 'nonuc_model')[xvariable], ds.sel(model_name = 'nonuc_model')[yvariable1], color = nonuc_color, width = width, align="edge", label = 'No Nuclear')
     if egrid == True:
-        plt.bar(ds.sel(model_name = 'normal')[xvariable], ds.sel(model_name = 'normal')[egrid_yvariable], color = egrid_color, width = -width, align="edge", label = 'Egrid')
+        plt.bar(ds.sel(model_name = 'normal_model')[xvariable], ds.sel(model_name = 'normal_model')[egrid_yvariable], color = egrid_color, width = -width, align="edge", label = 'Egrid')
     if normal == True:
-        plt.bar(ds.sel(model_name = 'normal')[xvariable], ds.sel(model_name = 'normal')[yvariable1], color = normal_color, width = width, align="center", label = 'Normal Model')
+        plt.bar(ds.sel(model_name = 'normal_model')[xvariable], ds.sel(model_name = 'normal_model')[yvariable1], color = normal_color, width = width, align="center", label = 'Normal Model')
     plt.xticks(rotation = 45)
     ax.legend();
     
 def fossil_fuel_plot(ds, sci_names, xvariable, pollutants, figsize, nonuc_color, normal_color,egrid_color, normal = True, egrid = True):
-    fig,axes = plt.subplots(1, len(pollutants), figsize=figsize)
-    for idx_p, pollutant in enumerate(pollutants):
-        ax = axes[idx_p]
+    fig,axes = plt.subplots(2, 2, figsize=figsize, sharex = True)
+    for ax, pollutant in zip(axes.flatten(), pollutants):
         width = 0.3
-        ax.bar(ds.sel(model_name = 'nonuc').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'nonuc').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = nonuc_color, width = width, align="edge", label = 'No Nuclear')
+        ax.bar(ds.sel(model_name = 'nonuc_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'nonuc_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = nonuc_color, width = width, align="edge", label = 'No Nuclear')
         if normal == True:
-            ax.bar(ds.sel(model_name = 'normal').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'normal').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = normal_color, width = width, align="center", label = 'Normal Model')
+            ax.bar(ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = normal_color, width = width, align="center", label = 'Normal Model')
         if egrid == True:
-            ax.bar(ds.sel(model_name = 'normal').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'normal').sel(fueltype = ['Coal', 'NaturalGas'])[f'egrid_annual_{pollutant}_conc']/1000, color = egrid_color, width = -width, align="edge", label = 'Egrid')
+            ax.bar(ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'egrid_annual_{pollutant}_conc']/1000, color = egrid_color, width = -width, align="edge", label = 'Egrid')
         ax.set_title(f'{sci_names[pollutant]}', fontsize = 20);
-    axes[2].set_xlabel('Fuel Type', fontsize = 14)
-    axes[0].set_ylabel(f'Emissions (metric tons)', fontsize = 14)
+        ax.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+
+    fig.text(0.5, -0.01, f'Fuel Type', fontsize = 14, ha='center')
+    fig.text(-0.01, 0.38, f'Emissions (metric tons)', fontsize = 14, ha='center', rotation='vertical')
     custom_lines = [Line2D([0], [0], color=nonuc_color, lw=4),
                     Line2D([0], [0], color=normal_color, lw=4)]
-    plt.legend(custom_lines, ['No Nuclear', 'Normal'], bbox_to_anchor = [1.2, 1.0])
+    plt.legend(custom_lines, ['No Nuclear', 'normal_model'], bbox_to_anchor = [1.5, 1.3])
     plt.tight_layout()
         
 def isorropia_obs_model_plot(cdf, ds_isorropia, vmin, vmax, spacing, figsize = [8,20]):
@@ -385,9 +386,9 @@ def isorropia_obs_model_plot(cdf, ds_isorropia, vmin, vmax, spacing, figsize = [
             ax.scatter(x2, y2, c = 'C7', cmap = 'Accent',marker = 'v', vmin = vmin, vmax = vmax, label = 'IMPROVE Observations');
             
             #plot nonuc
-            x = cdf.loc[(cdf['species'] == 'NH4') & (cdf['Region'] == region) & (cdf['model'] == 'nonuc') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
-            y = cdf.loc[(cdf['species'] == 'NIT') & (cdf['Region'] == region) & (cdf['model'] == 'nonuc') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
-            z = cdf.loc[(cdf['species'] == 'PM25') & (cdf['Region'] == region) & (cdf['model'] == 'nonuc') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
+            x = cdf.loc[(cdf['species'] == 'NH4') & (cdf['Region'] == region) & (cdf['model'] == 'nonuc_model') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
+            y = cdf.loc[(cdf['species'] == 'NIT') & (cdf['Region'] == region) & (cdf['model'] == 'nonuc_model') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
+            z = cdf.loc[(cdf['species'] == 'PM25') & (cdf['Region'] == region) & (cdf['model'] == 'nonuc_model') & (cdf['date'].dt.month.isin(season_dict[season]))]['Arithmetic Mean']
 
             ax.scatter(x, y, c = 'C0', cmap = 'Accent', marker = '<', vmin = vmin, vmax = vmax, label = 'Model');
             #adjust x and y labels and limits
@@ -418,12 +419,12 @@ def isorropia_obs_model_plot(cdf, ds_isorropia, vmin, vmax, spacing, figsize = [
 
 def scatter_nitrate_plots(figsize, poll_ds, season, x_species, y_species):
     fig,ax = plt.subplots(figsize = figsize)
-    x = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'nonuc')[x_species]
-    y = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'nonuc')[y_species]
+    x = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'nonuc_model')[x_species]
+    y = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'nonuc_model')[y_species]
     plt.plot(x,y, 'C0.', label = 'No Nuclear')
-    x1 = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'normal')[x_species]
-    y1 = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'normal')[y_species]
-    plt.plot(x1,y1, 'C1.', label = 'Normal')
+    x1 = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'normal_model')[x_species]
+    y1 = poll_ds.groupby('time.season').mean().sel(season = season, model_name = 'normal_model')[y_species]
+    plt.plot(x1,y1, 'C1.', label = 'normal_model')
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
