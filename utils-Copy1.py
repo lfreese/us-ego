@@ -17,8 +17,6 @@ lat_lon_dict = {
 }
 month_string = ['01','02','03','04','05','06','07','08','09','10','11','12']
 species_dict = {'PM25':'PM2.5 - Local Conditions', 'SO2':'Sulfur dioxide', 'NO2':'Nitrogen dioxide (NO2)', 'O3':'Ozone', 'NOx':'Nitrogen Oxides (NO2+NO)', 'NH3':'Ammonia'}
-
-
 #list of all gas species
 gas_species_list = [ 
     'NO',
@@ -53,47 +51,41 @@ def import_GC_runs_general(path, output, preprocessor, species_list):
     ds = xr.open_mfdataset(path+output, preprocess = preprocessor)
     return (ds)
 
-def combine_and_convert_PM_O3(O3_ds_combine, PM_ds_combine, O3_index_names,PM_index_names, ds_final_name):
-    '''Combine geos chem datasets, and convert mol/mol to ppbv for O3 only'''
-
+def combine_and_convert_ds(gas_species_list, aerosol_species_list, datasets_to_combine, index_names, model_names_no_reference, reference_model_name, ds_final_name):
+    '''Combine geos chem datasets, choose which species will be in the dataset, and convert mol/mol to ppbv
+    Includes create a H2O2/HNO3 and CH2O/NO2 ratio
+    returns a pollution dataset with all species listed in proper units'''
+    #list of all names of species we will keep
+    all_aerosol_species_list = list(aerosol_species_list) + ['PM25', 'TotalOC','TotalOA','AerMassBC']
+    all_species = list(gas_species_list) + list(all_aerosol_species_list)
+    
     #combine our two datasets into one, with model as an index
-    dsO3 = xr.concat(O3_ds_combine, pd.Index(O3_index_names, name='model_name'))
-    dsPM = xr.concat(PM_ds_combine, pd.Index(PM_index_names, name='model_name'))
-    ds = xr.merge([dsO3, dsPM])
-    ds = ds.isel(lev = 0)
+    ds = xr.concat(datasets_to_combine, pd.Index(index_names, name='model_name'))
+    
 
-    ds[f'SpeciesConc_O3'] *= 1e9 #convert from mol/mol to ppbv
-    ds[f'SpeciesConc_O3'].attrs['units'] = 'ppbv'
-    ds = ds.rename({'SpeciesConc_O3':'O3'})
+    #calculate the NO2/CH2O ratio    
+    poll_ds[f'CH2O_NO2'] = poll_ds['CH2O']/poll_ds['NO2']
+    poll_ds[f'CH2O_NO2'].attrs['units'] = 'Ratio CH2O/NO2'
+
+    #calculate the H2O2/HNO3 ratio    
+    poll_ds[f'H2O2_HNO3'] = poll_ds['H2O2']/poll_ds['HNO3']
+    poll_ds[f'H2O2_HNO3'].attrs['units'] = 'Ratio H2O2/HNO3'
 
     #name dataset
-    ds.attrs['name'] = ds_final_name
-    return(ds)
+    poll_ds.attrs['name'] = ds_final_name
+    return(poll_ds)
 
-def convert_gases(gas_ds, index_model_names, gas_name):
-    '''Combine geos chem datasets, and convert mol/mol to ppbv for O3 only'''
+def dif_between_models(poll_ds, new_model_name, reference_model_name, species_list):
+    
+    for species in species_list:
+        #calculate the differences for species
+            poll_ds[f'dif_{new_model_name}-{reference_model_name}_{species}'] = poll_ds.sel(model_name = new_model_name)[f'{species}'] - poll_ds.sel(model_name = reference_model_name)[f'{species}']
+            poll_ds[f'dif_{new_model_name}-{reference_model_name}_{species}'].attrs['units'] = poll_ds.sel(model_name = new_model_name)[f'{species}'].attrs['units']
 
-    #combine our two datasets into one, with model as an index
-    ds_gas = xr.concat(gas_ds, pd.Index(index_model_names, name='model_name'))
-    ds_gas = ds_gas.isel(lev = 0)
-
-    ds_gas[f'SpeciesConc_{gas_name}'] *= 1e9 #convert from mol/mol to ppbv
-    ds_gas[f'SpeciesConc_{gas_name}'].attrs['units'] = 'ppbv'
-    ds_gas = ds_gas.rename({f'SpeciesConc_{gas_name}':f'{gas_name}'})
-
-    return(ds_gas)
-
-def convert_aerosol(aerosol_ds, index_model_names, aerosol_name):
-    '''Combine geos chem datasets, and convert mol/mol to ppbv for O3 only'''
-
-    #combine our two datasets into one, with model as an index
-    aerosol_ds = xr.concat(aerosol_ds, pd.Index(index_model_names, name='model_name'))
-    aerosol_ds = aerosol_ds.isel(lev = 0)
-
-    aerosol_ds[f'AerMass{aerosol_name}'].attrs['units'] = 'ug/m3'
-    aerosol_ds = aerosol_ds.rename({f'AerMass{aerosol_name}':f'{aerosol_name}'})
-
-    return(aerosol_ds)
+            #calculate the percent differences for species
+            poll_ds[f'percent_dif_{new_model_name}-{reference_model_name}_{species}'] = (poll_ds[f'dif_{new_model_name}-{reference_model_name}_{species}']/poll_ds.sel(model_name = reference_model_name)[f'{species}'])*100
+            poll_ds[f'percent_dif_{new_model_name}-{reference_model_name}_{species}'].attrs['units'] = 'Percent Difference'
+    return(poll_ds)
 
 def combine_egrid_generation(oris_ds, gen_ds, egrid_ds):   
     #create a capacity, fueltype, and regionname grouped by ORISCode
@@ -126,82 +118,7 @@ def combine_egrid_generation(oris_ds, gen_ds, egrid_ds):
     gmodel_egrid_ds = gmodel_egrid_ds.set_coords('regionname')
     return(gmodel_egrid_ds)
     
-
-    
-def season_mean(ds, calendar="standard"):
-    # Make a DataArray with the number of days in each month, size = len(time)
-    month_length = ds.time.dt.days_in_month
-
-    # Calculate the weights by grouping by 'time.season'
-    weights = (
-        month_length.groupby("time.season") / month_length.groupby("time.season").sum()
-    )
-
-    # Test that the sum of the weights for each season is 1.0
-    np.testing.assert_allclose(weights.groupby("time.season").sum().values, np.ones(4))
-
-    # Calculate the weighted average
-    return (ds * weights).groupby("time.season").sum(dim="time")
-
-
-#### function to find area of a grid cell from lat/lon ####
-def find_area(ds, R = 6378.1):
-    """ ds is the dataset, i is the number of longitudes to assess, j is the number of latitudes, and R is the radius of the earth in km. 
-    Must have the ds['lat'] in descending order (90...-90)
-    Returns Area of Grid cell in km"""
-    
-    dy = (ds['lat_b']- ds['lat_b'].roll({'lat_b':-1}, roll_coords = False))[:-1]*2*np.pi*R/360 
-
-    dx1 = (ds['lon_b'].roll({'lon_b':-1}, roll_coords = False) - 
-           ds['lon_b'])[:-1]*2*np.pi*R*np.cos(np.deg2rad(ds['lat_b']))
-    
-    dx2 = (ds['lon_b'].roll({'lon_b':-1}, roll_coords = False) - 
-           ds['lon_b'])[:-1]*2*np.pi*R*np.cos(np.deg2rad(ds['lat_b'].roll({'lat_b':-1}, roll_coords = False)[:-1]))
-    
-    A = .5*(dx1+dx2)*dy
-    
-    #### assign new lat and lon coords based on the center of the grid box instead of edges ####
-    A = A.assign_coords(lon_b = ds.lon.values,
-                    lat_b = ds.lat.values)
-    A = A.rename({'lon_b':'lon','lat_b':'lat'})
-
-    A = A.transpose()
-    
-    return(A)
-
-
-def make_2d_grid(lon_b1, lon_b2, lon_step, lat_b1, lat_b2, lat_step):
-    lon_bounds = np.arange(lon_b1, lon_b2+lon_step, lon_step)
-    lon_centers = (lon_bounds[:-1] + lon_bounds[1:])/2
-    
-    lat_bounds = np.arange(lat_b1, lat_b2+lat_step, lat_step)[::-1]
-    lat_centers = (lat_bounds[:-1] + lat_bounds[1:])/2
-    
-    ds = xr.Dataset({'lat': (['lat'], lat_centers),
-                     'lon': (['lon'], lon_centers),
-                     'lat_b': (['lat_b'], lat_bounds),
-                     'lon_b': (['lon_b'], lon_bounds),
-                    }
-                   )
-    return(ds)
-
-
-
-#bootstrap function    
-def draw_bs(x, size):
-    '''performs pairs bootstrap for a linear regression for ozone health impact assessment'''
-    #Perform pairs bootstrap for linear regression
-
-    # Set up array of indices to sample from: inds
-    inds = np.arange(0,len(x))
-
-    # Generate replicates
-    bs_inds = np.random.choice(inds, size=size)
-    bs_val= x[bs_inds]
-        
-    return bs_val
-
-    
+            
 def linregress_data(obs_df, interp_df, model_names, month_string, species_list):
     result = [stats.linregress(
             x = obs_df.loc[
@@ -229,7 +146,6 @@ def interp_obs_differences(EPA_obs_df, interp_df, month_string, model_names, spe
                 EPA_obs_df.loc[EPA_obs_df['species'] == species].groupby([pd.Grouper('Latitude'), pd.Grouper('Longitude')]).mean()['Arithmetic Mean'] -
                 interp_df.loc[(interp_df['model_name'] == model) & (interp_df['species'] == species)].groupby(['Latitude','Longitude']).mean()['Arithmetic Mean']            )
     return(EPA_interp_dif)
-
 
 def ppb_to_ug(ds, species_to_convert, mw_species_list, stp_p = 101325, stp_t = 298.):
     '''Convert species to ug/m3 from ppb'''

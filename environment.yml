@@ -5,6 +5,7 @@ dependencies:
   - cdo
   - xlrd
   - esmpy
+  - xgcm
   - dask
   - python
   - jupyter
@@ -24,3 +25,4 @@ dependencies:
   - zarr
   - xesmf
   - feather-format
+  - nc-time-axis
