@@ -59,7 +59,7 @@ def combine_and_convert_PM_O3(O3_ds_combine, PM_ds_combine, O3_index_names,PM_in
     #combine our two datasets into one, with model as an index
     dsO3 = xr.concat(O3_ds_combine, pd.Index(O3_index_names, name='model_name'))
     dsPM = xr.concat(PM_ds_combine, pd.Index(PM_index_names, name='model_name'))
-    ds = xr.merge([dsO3, dsPM])
+    ds = xr.merge([dsO3['SpeciesConc_O3'], dsPM['PM25']])
     ds = ds.isel(lev = 0)
 
     ds[f'SpeciesConc_O3'] *= 1e9 #convert from mol/mol to ppbv

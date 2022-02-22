@@ -7,12 +7,14 @@ from matplotlib.lines import Line2D
 from matplotlib import cm
 
 proper_names_dict = {'PM25':r'PM$_{2.5}$ ($\mu g/m^3$)', 'NOx':r'NO$_x$ (ppbv)', 'SO2':r'SO$_2$ (ppbv)','O3':r'O$_3$ (ppbv)', 'NIT':r'Nitrate $(\mu g/m^3)$', 'NO2':r'NO$_2$ (ppbv)','SO4':r'SO$_4\ (\mu g/m^3)$','NH3':'Ammonia','NH4':'Ammonium'}
-proper_model_names_dict = {'nonuc_NA':'No Nuclear','normal_NA': 'Normal','egrid_NA':'eGRID','epa_NA':'NEI 2016','nei_NA':'NEI 2011', 'nonuc_coal_NA':'No Nuclear or Coal', 'EPA':'AQS','IMPROVE':'IMPROVE'}
+proper_model_names_dict = {'nonuc_NA':'No Nuclear','normal_NA': 'Base','egrid_NA':'eGRID','epa_NA':'NEI 2016','nei_NA':'NEI 2011', 'nonuc_coal_NA':'No Nuclear \n or Coal', 'EPA':'AQS','IMPROVE':'IMPROVE'}
 ###set color for each type
 nonuc_color = 'C1'
 normal_color = 'C0'
 egrid_color = 'C7'
 nocoal_color = 'c'
+nox_lim_color = 'C5'
+renew_color = 'C3'
 
 cmap_dif = 'PRGn_r'
 cmap_conc = 'PuBu'
@@ -74,7 +76,7 @@ def concentration_plot_seasonal(ds_seasonal, species_names, season, model_names,
             ax.set_extent(lat_lon) #set a limit on the plot lat and lon
             ax.set_title(f'{proper_model_names_dict[model]} {species}', fontsize = 16); #title
 
-def concentration_plot_seasonal_dif(ds_seasonal, species_names, seasons, rows, 
+def concentration_plot_seasonal_dif(ds_seasonal, species_names, seasons, mod_base, mod_delta, rows, 
                        columns, figsize, levels,
                      cmap,
                        lat_lon, extension = 'both'):
@@ -85,7 +87,7 @@ def concentration_plot_seasonal_dif(ds_seasonal, species_names, seasons, rows,
             ax = axes[idx_spec, idx_seas]
 
         #make the plot
-            q = (ds_seasonal[f'{species}'].sel(season = season, model_name = 'nonuc_NA')-ds_seasonal[f'{species}'].sel(season = season, model_name = 'normal_NA')).plot(ax=ax, #set the axis
+            q = (ds_seasonal[f'{species}'].sel(season = season, model_name = mod_delta)-ds_seasonal[f'{species}'].sel(season = season, model_name = mod_base)).plot(ax=ax, #set the axis
                                        levels = np.squeeze(levels), #set the levels for our colorbars
                                        extend=extension,#extend the colorbar in both directions
                                        transform=ccrs.PlateCarree(), #fit data into map
@@ -134,7 +136,65 @@ def concentration_plot_monthly_dif(ds, species_names, times, rows,
     # put colorbar at desire position
     cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
     fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
+    
+def concentration_plot_seasonal_dif_models(ds_seasonal, species_name, seasons, mod_base, mod_deltas, rows, 
+                       columns, figsize, levels,
+                     cmap,
+                       lat_lon, extension = 'both'):
+    fig, axes =  plt.subplots(len(mod_deltas), len(seasons), figsize=figsize,subplot_kw={'projection':ccrs.LambertConformal()})
+    for idx_seas, season in enumerate(seasons):
+        for idx_mod, mod in enumerate(mod_deltas):
 
+            ax = axes[idx_mod, idx_seas]
+
+        #make the plot
+            q = (ds_seasonal[f'{species_name}'].sel(season = season, model_name = mod)-ds_seasonal[f'{species_name}'].sel(season = season, model_name = mod_base)).plot(ax=ax, #set the axis
+                                       levels = np.squeeze(levels), #set the levels for our colorbars
+                                       extend=extension,#extend the colorbar in both directions
+                                       transform=ccrs.PlateCarree(), #fit data into map
+                                        cmap=cmap, add_colorbar = False)  #choose color for our colorbar
+
+            ax.add_feature(cfeat.STATES)
+            ax.coastlines() #add coastlines
+            ax.set_extent(lat_lon) #set a limit on the plot lat and lon
+            ax.set_title(''); #title
+    for idx_mod, mod in enumerate(mod_deltas):
+        axes[idx_mod, 0].annotate(f'{proper_model_names_dict[mod]}', xy=(-.15, 0.2), xycoords = 'axes fraction', fontsize = 14, rotation = 90)
+    axes[0,0].set_title(seasons[0], fontsize = 14)
+    axes[0,1].set_title(seasons[1], fontsize = 14)
+    fig.subplots_adjust(right=0.8)
+    # put colorbar at desire position
+    cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
+    fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
+
+def concentration_plot_dif_models(ds_seasonal, species_name, season, mod_base, mod_deltas, rows, 
+                       columns, figsize, levels,
+                     cmap,
+                       lat_lon, extension = 'both'):
+    fig, axes =  plt.subplots(len(mod_deltas), len(season), figsize=figsize,subplot_kw={'projection':ccrs.LambertConformal()})
+    for idx_mod, mod in enumerate(mod_deltas):
+
+        ax = axes[idx_mod]
+
+    #make the plot
+        q = (ds_seasonal[f'{species_name}'].sel(season = season, model_name = mod)-ds_seasonal[f'{species_name}'].sel(season = season, model_name = mod_base)).plot(ax=ax, #set the axis
+                                   levels = np.squeeze(levels), #set the levels for our colorbars
+                                   extend=extension,#extend the colorbar in both directions
+                                   transform=ccrs.PlateCarree(), #fit data into map
+                                    cmap=cmap, add_colorbar = False)  #choose color for our colorbar
+
+        ax.add_feature(cfeat.STATES)
+        ax.coastlines() #add coastlines
+        ax.set_extent(lat_lon) #set a limit on the plot lat and lon
+        ax.set_title(''); #title
+    for idx_mod, mod in enumerate(mod_deltas):
+        axes[idx_mod].annotate(f'{proper_model_names_dict[mod]}', xy=(-.15, 0.2), xycoords = 'axes fraction', fontsize = 14, rotation = 90)
+    axes[0].set_title('JJA', fontsize = 14)
+    fig.subplots_adjust(right=0.8)
+    # put colorbar at desire position
+    cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
+    fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
+    
 def ratio_plot(ds_seasonal, seasons, species1, species2, model, rows, 
                        columns, figsize, levels,
                        cmap,shrink_cbar,
@@ -386,9 +446,11 @@ def plot_percent_emissions_dif(ds_seasonal, m1, m2, emissions, seasons, levels, 
     fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
     cbar_ax.set_xlabel('% change', fontsize = 14)
     
-def plant_region_plot(ds, xvariable, yvariable1, egrid, egrid_yvariable, figsize, nocoal, normal = True, nonuc = True):
+def plant_region_plot(ds, xvariable, yvariable1, egrid, egrid_yvariable, figsize, nocoal,  noxlim = True, normal = True, nonuc = True, renew = True):
     fig, ax = plt.subplots(figsize=figsize)
     width = 0.3
+    if noxlim == True:
+        plt.bar(ds.sel(model_name = 'nox_lim_model')[xvariable], ds.sel(model_name = 'nox_lim_model')[yvariable1], color = nox_lim_color, width = width, align="edge", label = 'NOx Emissions Limited Model')
     if nocoal == True:
         plt.bar(ds.sel(model_name = 'nonuc_nocoal_model')[xvariable], ds.sel(model_name = 'nonuc_nocoal_model')[yvariable1], color = nocoal_color, width = width, align="center", label = 'No Coal or Nuclear Model')
     if nonuc == True:
@@ -396,12 +458,14 @@ def plant_region_plot(ds, xvariable, yvariable1, egrid, egrid_yvariable, figsize
     if egrid == True:
         plt.bar(ds.sel(model_name = 'normal_model')[xvariable], ds.sel(model_name = 'normal_model')[egrid_yvariable], color = egrid_color, width = -width, align="edge", label = 'Egrid')
     if normal == True:
-        plt.bar(ds.sel(model_name = 'normal_model')[xvariable], ds.sel(model_name = 'normal_model')[yvariable1], color = normal_color, width = width, align="center", label = 'Normal Model')
+        plt.bar(ds.sel(model_name = 'normal_model')[xvariable], ds.sel(model_name = 'normal_model')[yvariable1], color = normal_color, width = width, align="center", label = 'Base Model')
+    if renew == True:
+        plt.bar(ds.sel(model_name = 'renewables_model')[xvariable], ds.sel(model_name = 'renewables_model')[yvariable1], color = renew_color, width = width, align="edge", label = 'Renewables Model')
 
     plt.xticks(rotation = 45)
     ax.legend();
     
-def fossil_fuel_plot(ds, sci_names, xvariable, pollutants, figsize, nonuc_color, normal_color,egrid_color, nocoal, egrid, normal = True):
+def fossil_fuel_plot(ds, sci_names, xvariable, pollutants, figsize, nonuc_color, normal_color,egrid_color, nocoal, egrid, noxlim = True, normal = True, renew = True):
     fig,axes = plt.subplots(2, 2, figsize=figsize, sharex = True)
     for ax, pollutant in zip(axes.flatten(), pollutants):
         width = 0.3
@@ -409,9 +473,14 @@ def fossil_fuel_plot(ds, sci_names, xvariable, pollutants, figsize, nonuc_color,
         if nocoal == True:
             ax.bar(ds.sel(model_name = 'nonuc_nocoal_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'nonuc_nocoal_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = nocoal_color, width = width, align="center", label = 'No Nuclear or Coal Model')
         if normal == True:
-            ax.bar(ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = normal_color, width = width, align="center", label = 'Normal Model')
+            ax.bar(ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = normal_color, width = width, align="center", label = 'Base Model')
         if egrid == True:
             ax.bar(ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'egrid_annual_{pollutant}_conc']/1000, color = egrid_color, width = -width, align="edge", label = 'Egrid')
+        if noxlim == True:
+            ax.bar(ds.sel(model_name = 'nox_lim_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'nox_lim_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = nox_lim_color, width = -width, align="edge", label = 'NOx Limited Model')
+        if renew == True:
+            ax.bar(ds.sel(model_name = 'renewables_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'renewables_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = renew_color, width = -width, align="center", label = 'NOx Limited Model')
+        ax.set_title(f'{sci_names[pollutant]}', fontsize = 20);
         ax.set_title(f'{sci_names[pollutant]}', fontsize = 20);
         ax.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
 
@@ -419,8 +488,11 @@ def fossil_fuel_plot(ds, sci_names, xvariable, pollutants, figsize, nonuc_color,
     fig.text(-0.01, 0.38, f'Emissions (metric tons)', fontsize = 14, ha='center', rotation='vertical')
     custom_lines = [Line2D([0], [0], color=nonuc_color, lw=4),
                     Line2D([0], [0], color=normal_color, lw=4),
-                   Line2D([0], [0], color=nocoal_color, lw=4)]
-    plt.legend(custom_lines, ['No Nuclear', 'Normal Model', 'No Nuclear or Coal Model'], bbox_to_anchor=(.95,.5),  bbox_transform=fig.transFigure)
+                   Line2D([0], [0], color=nocoal_color, lw=4),
+                   Line2D([0], [0], color=nox_lim_color, lw=4),
+                   Line2D([0], [0], color=renew_color, lw=4),
+                   Line2D([0], [0], color=egrid_color, lw=4)]
+    plt.legend(custom_lines, ['No Nuclear', 'Base Model', 'No Nuclear or Coal Model', 'NOx Limited Model', 'Renewables Model', 'Egrid Model'], bbox_to_anchor=(.95,.5),  bbox_transform=fig.transFigure)
     plt.tight_layout()
         
 def isorropia_obs_model_plot(cdf, ds_isorropia, vmin, vmax, spacing, figsize = [8,20]):
