@@ -7,7 +7,7 @@ from matplotlib.lines import Line2D
 from matplotlib import cm
 
 proper_names_dict = {'PM25':r'PM$_{2.5}$ ($\mu g/m^3$)', 'NOx':r'NO$_x$ (ppbv)', 'SO2':r'SO$_2$ (ppbv)','O3':r'O$_3$ (ppbv)', 'NIT':r'Nitrate $(\mu g/m^3)$', 'NO2':r'NO$_2$ (ppbv)','SO4':r'SO$_4\ (\mu g/m^3)$','NH3':'Ammonia','NH4':'Ammonium'}
-proper_model_names_dict = {'nonuc_NA':'No Nuclear','normal_NA': 'Base','egrid_NA':'eGRID','epa_NA':'NEI 2016','nei_NA':'NEI 2011', 'nonuc_coal_NA':'No Nuclear \n or Coal', 'EPA':'AQS','IMPROVE':'IMPROVE'}
+proper_model_names_dict = {'nonuc_NA':'No Nuclear','normal_NA': 'Base','egrid_NA':'eGRID','epa_NA':'NEI 2016','nei_NA':'NEI 2011', 'nonuc_coal_NA':'No Nuclear-No Coal', 'EPA':'AQS','IMPROVE':'IMPROVE'}
 ###set color for each type
 nonuc_color = 'C1'
 normal_color = 'C0'
@@ -74,7 +74,7 @@ def concentration_plot_seasonal(ds_seasonal, species_names, season, model_names,
             ax.add_feature(cfeat.STATES)
             ax.coastlines() #add coastlines
             ax.set_extent(lat_lon) #set a limit on the plot lat and lon
-            ax.set_title(f'{proper_model_names_dict[model]} {species}', fontsize = 16); #title
+            ax.set_title(f'{proper_model_names_dict[model]} {proper_names_dict[species]}', fontsize = 16); #title
 
 def concentration_plot_seasonal_dif(ds_seasonal, species_names, seasons, mod_base, mod_delta, rows, 
                        columns, figsize, levels,
@@ -137,31 +137,45 @@ def concentration_plot_monthly_dif(ds, species_names, times, rows,
     cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
     fig.colorbar(q, cax=cbar_ax, orientation="horizontal")
     
-def concentration_plot_seasonal_dif_models(ds_seasonal, species_name, seasons, mod_base, mod_deltas, rows, 
+def concentration_plot_seasonal_dif_models(ds_seasonal, polls, mod_base, mod_deltas, rows, 
                        columns, figsize, levels,
                      cmap,
                        lat_lon, extension = 'both'):
-    fig, axes =  plt.subplots(len(mod_deltas), len(seasons), figsize=figsize,subplot_kw={'projection':ccrs.LambertConformal()})
-    for idx_seas, season in enumerate(seasons):
+    '''plotting annual mean for pollutants, except ozone which is summertime mean'''
+    fig, axes =  plt.subplots(len(mod_deltas), len(polls), figsize=figsize,subplot_kw={'projection':ccrs.LambertConformal()})
+    for idx_poll, poll in enumerate(polls):
         for idx_mod, mod in enumerate(mod_deltas):
 
-            ax = axes[idx_mod, idx_seas]
+            ax = axes[idx_poll, idx_mod]
 
-        #make the plot
-            q = (ds_seasonal[f'{species_name}'].sel(season = season, model_name = mod)-ds_seasonal[f'{species_name}'].sel(season = season, model_name = mod_base)).plot(ax=ax, #set the axis
-                                       levels = np.squeeze(levels), #set the levels for our colorbars
-                                       extend=extension,#extend the colorbar in both directions
-                                       transform=ccrs.PlateCarree(), #fit data into map
-                                        cmap=cmap, add_colorbar = False)  #choose color for our colorbar
+        #make the plot 
+            if poll == 'O3':
+                q = (ds_seasonal[poll].sel( model_name = mod)-ds_seasonal[poll].sel(model_name = mod_base)).sel(season = 'JJA').plot(ax=ax, #set the axis
+                           levels = np.squeeze(levels), #set the levels for our colorbars
+                           extend=extension,#extend the colorbar in both directions
+                           transform=ccrs.PlateCarree(), #fit data into map
+                            cmap=cmap, add_colorbar = False)  #choose color for our colorbar
 
-            ax.add_feature(cfeat.STATES)
-            ax.coastlines() #add coastlines
-            ax.set_extent(lat_lon) #set a limit on the plot lat and lon
-            ax.set_title(''); #title
+                ax.add_feature(cfeat.STATES)
+                ax.coastlines() #add coastlines
+                ax.set_extent(lat_lon) #set a limit on the plot lat and lon
+                ax.set_title(''); #title
+                axes[idx_poll,0].annotate(proper_names_dict[poll], xy=(-.15, 0.2), xycoords = 'axes fraction', fontsize = 14, rotation = 90)
+            else:
+                q = (ds_seasonal[poll].sel( model_name = mod)-ds_seasonal[poll].sel(model_name = mod_base)).mean(dim = 'season').plot(ax=ax, #set the axis
+                                           levels = np.squeeze(levels), #set the levels for our colorbars
+                                           extend=extension,#extend the colorbar in both directions
+                                           transform=ccrs.PlateCarree(), #fit data into map
+                                            cmap=cmap, add_colorbar = False)  #choose color for our colorbar
+
+                ax.add_feature(cfeat.STATES)
+                ax.coastlines() #add coastlines
+                ax.set_extent(lat_lon) #set a limit on the plot lat and lon
+                ax.set_title(''); #title
+                axes[idx_poll,0].annotate(proper_names_dict[poll], xy=(-.15, 0.2), xycoords = 'axes fraction', fontsize = 14, rotation = 90)
     for idx_mod, mod in enumerate(mod_deltas):
-        axes[idx_mod, 0].annotate(f'{proper_model_names_dict[mod]}', xy=(-.15, 0.2), xycoords = 'axes fraction', fontsize = 14, rotation = 90)
-    axes[0,0].set_title(seasons[0], fontsize = 14)
-    axes[0,1].set_title(seasons[1], fontsize = 14)
+        axes[0,idx_mod].set_title(proper_model_names_dict[mod], fontsize = 14)
+    
     fig.subplots_adjust(right=0.8)
     # put colorbar at desire position
     cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
@@ -323,11 +337,11 @@ def interp_scatterplot(interp_df, obs_df, lin_regress_df,species_list, model_nam
             ax.set_ylim([-1,x.max()+1])
             r_val = np.round(lin_regress_df.loc[(lin_regress_df['species'] == species) & (lin_regress_df['model_name'] == model), 'rvalue'].values[0], 2)
             std_err = np.round(lin_regress_df.loc[(lin_regress_df['species'] == species) & (lin_regress_df['model_name'] == model), 'stderr'].values[0], 2)
-            ax.set_title(f'{species} {proper_model_names_dict[model]} \n R-value: {r_val} \n Standard error: {std_err}')
+            ax.set_title(f'{proper_names_dict[species]} {proper_model_names_dict[model]} \n R-value: {r_val} \n Standard error: {std_err}')
     custom_lines = [Line2D([0], [0], color='xkcd:grey', lw=4),]
                 #Line2D([0], [0], color='xkcd:almost black', lw=4)]
     fig.text(0.5, -0.01, 'Observational Annual Mean', ha='center', fontsize = 16)
-    fig.text(-0.01, 0.5, 'GC Annual Mean', va='center', rotation='vertical', fontsize = 16)
+    fig.text(-0.01, 0.5, 'GEOS-Chem Annual Mean', va='center', rotation='vertical', fontsize = 16)
 
     fig.legend(custom_lines, ['1:1 Line'], loc = 'lower right')
     plt.tight_layout()
