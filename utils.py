@@ -5,6 +5,8 @@ import numpy as np
 import glob
 from datetime import datetime, timedelta 
 import geopandas
+from math import radians, cos, sin, asin, sqrt
+
 
 lat_lon_dict = {
 'US_lat_lon':[-130.0, -60.0, 24.0, 45.0],
@@ -313,3 +315,6 @@ def haversine(lon1, lat1, lon2, lat2): #adjusted from https://stackoverflow.com/
     c = 2 * asin(sqrt(a)) 
     r = 6371 # Radius of earth in kilometers, have to convert to miles when out
     return c * r
+
+def grouped_weighted_avg(values, weights):
+    return (values * weights).sum() / weights.sum()

@@ -6,8 +6,8 @@ import utils
 from matplotlib.lines import Line2D
 from matplotlib import cm
 
-proper_names_dict = {'PM25':r'PM$_{2.5}$ ($\mu g/m^3$)', 'NOx':r'NO$_x$ (ppbv)', 'SO2':r'SO$_2$ (ppbv)','O3':r'O$_3$ (ppbv)', 'NIT':r'Nitrate $(\mu g/m^3)$', 'NO2':r'NO$_2$ (ppbv)','SO4':r'SO$_4\ (\mu g/m^3)$','NH3':'Ammonia','NH4':'Ammonium'}
-proper_model_names_dict = {'nonuc_NA':'No Nuclear','normal_NA': 'Base','egrid_NA':'eGRID','epa_NA':'NEI 2016','nei_NA':'NEI 2011', 'nonuc_coal_NA':'No Nuclear-No Coal', 'EPA':'AQS','IMPROVE':'IMPROVE'}
+proper_names_dict = {'PM25':r'PM$_{2.5}$ ($\mu g m^{-3}$)', 'NOx':r'NO$_x$ (ppbv)', 'SO2':r'SO$_2$ (ppbv)','O3':r'O$_3$ (ppbv)', 'NIT':r'Nitrate $(\mu g/m^3)$', 'NO2':r'NO$_2$ (ppbv)','SO4':r'SO$_4\ (\mu g/m^3)$','NH3':'Ammonia','NH4':'Ammonium'}
+proper_model_names_dict = {'nonuc_NA':'No Nuclear','normal_NA': 'Base','egrid_NA':'eGRID','epa_NA':'NEI 2016','nei_NA':'NEI 2011', 'nonuc_coal_NA':'No Nuclear- \n No Coal', 'EPA':'AQS','IMPROVE':'IMPROVE'}
 ###set color for each type
 nonuc_color = 'C1'
 normal_color = 'C0'
@@ -59,23 +59,38 @@ def concentration_plot_annual(ds, species_names, model_names, rows,
 def concentration_plot_seasonal(ds_seasonal, species_names, season, model_names, figsize,
                        cmap,shrink_cbar,
                        lat_lon, extension = 'max'):
-    fig, axes =  plt.subplots(len(species_names), len(model_names), figsize=figsize,subplot_kw={'projection':ccrs.LambertConformal()})
+    fig, axes =  plt.subplots( len(model_names), len(species_names), figsize=figsize,subplot_kw={'projection':ccrs.LambertConformal()})
+    q = {}
     for idx_m, model in enumerate(model_names):
         for idx_s, species in enumerate(species_names):
-            ax = axes[idx_s,idx_m]        
+            ax = axes[idx_m,idx_s]        
             #make the plot
-            ds_seasonal[f'{species}'].sel(model_name = model, season = season).plot(ax=ax, #set the axis
+            q[idx_s] = ds_seasonal[f'{species}'].sel(model_name = model, season = season).plot(ax=ax, #set the axis
                                    levels = np.squeeze(levels_dict[species]), #set the levels for our colorbars
                                    extend=extension,#extend the colorbar in both directions
                                    transform=ccrs.PlateCarree(), #fit data into map
-                                   cbar_kwargs={'label':ds_seasonal.sel(model_name = model)[f'{species}'].attrs['units'],'shrink':shrink_cbar}, #label our colorbar
+                                    add_colorbar = False,
+                                   #cbar_kwargs={'label':ds_seasonal.sel(model_name = model)[f'{species}'].attrs['units'],'shrink':shrink_cbar}, #label our colorbar
                                     cmap=cmap)  #choose color for our colorbar
             
             ax.add_feature(cfeat.STATES)
             ax.coastlines() #add coastlines
             ax.set_extent(lat_lon) #set a limit on the plot lat and lon
-            ax.set_title(f'{proper_model_names_dict[model]} {proper_names_dict[species]}', fontsize = 16); #title
-
+            ax.set_title('')
+           # ax.set_title(f'{proper_model_names_dict[model]} {proper_names_dict[species]}', fontsize = 16); #title
+    for idx_spec, species in enumerate(species_names):
+        axes[0,idx_spec].set_title(proper_names_dict[species], fontsize = 14)
+    for idx_m, model in enumerate(model_names):
+        axes[idx_m,0].annotate(f'{proper_model_names_dict[model]}', xy=(-.18, 0.2), xycoords = 'axes fraction', fontsize = 14, rotation = 90)
+    #fig.subplots_adjust(right=0.8)
+    #put colorbar at desire position
+    cbar_ax = fig.add_axes([0.15, 0.11, 0.3, 0.01]) # [left, bottom, width, height]
+    fig.colorbar(q[0], cax=cbar_ax, orientation="horizontal")
+    
+     #  put colorbar at desire position
+    cbar_ax2 = fig.add_axes([0.60, 0.11, 0.3, 0.01]) # [left, bottom, width, height]
+    fig.colorbar(q[1], cax=cbar_ax2, orientation="horizontal")
+    
 def concentration_plot_seasonal_dif(ds_seasonal, species_names, seasons, mod_base, mod_delta, rows, 
                        columns, figsize, levels,
                      cmap,
@@ -99,8 +114,8 @@ def concentration_plot_seasonal_dif(ds_seasonal, species_names, seasons, mod_bas
             ax.set_title(''); #title
     for idx_spec, species in enumerate(species_names):
         axes[idx_spec, 0].annotate(f'{proper_names_dict[species]}', xy=(-.1, 0.2), xycoords = 'axes fraction', fontsize = 14, rotation = 90)
-    axes[0,0].set_title('JJA', fontsize = 14)
-    axes[0,1].set_title('DJF', fontsize = 14)
+    axes[0,0].set_title(seasons[0], fontsize = 14)
+    axes[0,1].set_title(seasons[1], fontsize = 14)
     fig.subplots_adjust(right=0.8)
     # put colorbar at desire position
     cbar_ax = fig.add_axes([0.2, 0.06, 0.5, 0.03]) # [left, bottom, width, height]
