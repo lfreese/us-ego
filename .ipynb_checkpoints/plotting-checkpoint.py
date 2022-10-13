@@ -489,7 +489,26 @@ def plant_region_plot(ds, xvariable, yvariable1, egrid, egrid_yvariable, figsize
     if normal == True:
         plt.bar(ds.sel(model_name = 'normal_model')[xvariable], ds.sel(model_name = 'normal_model')[yvariable1], color = normal_color, width = width, align="center", label = 'Base Model')
     if renew == True:
-        plt.bar(ds.sel(model_name = 'renewables_model')[xvariable], ds.sel(model_name = 'renewables_model')[yvariable1], color = renew_color, width = width, align="edge", label = 'Renewables Model')
+        plt.bar(ds.sel(model_name = 'nonuc_renewables_model')[xvariable], ds.sel(model_name = 'nonuc_renewables_model')[yvariable1], color = renew_color, width = width, align="edge", label = 'Renewables Model')
+
+    plt.xticks(rotation = 45)
+    ax.legend();
+    
+def plant_region_plot(ds, xvariable, yvariable1, egrid, egrid_yvariable, figsize, nocoal,  noxlim = True, normal = True, nonuc = True, renew = True):
+    fig, ax = plt.subplots(figsize=figsize)
+    width = 0.3
+    if noxlim == True:
+        plt.bar(ds.sel(model_name = 'nox_lim_model')[xvariable], ds.sel(model_name = 'nox_lim_model')[yvariable1], color = nox_lim_color, width = width, align="edge", label = 'NOx Emissions Limited Model')
+    if nocoal == True:
+        plt.bar(ds.sel(model_name = 'nonuc_nocoal_model')[xvariable], ds.sel(model_name = 'nonuc_nocoal_model')[yvariable1], color = nocoal_color, width = width, align="center", label = 'No Coal or Nuclear Model')
+    if nonuc == True:
+        plt.bar(ds.sel(model_name = 'nonuc_model')[xvariable], ds.sel(model_name = 'nonuc_model')[yvariable1], color = nonuc_color, width = width, align="edge", label = 'No Nuclear')
+    if egrid == True:
+        plt.bar(ds.sel(model_name = 'normal_model')[xvariable], ds.sel(model_name = 'normal_model')[egrid_yvariable], color = egrid_color, width = -width, align="edge", label = 'Egrid')
+    if normal == True:
+        plt.bar(ds.sel(model_name = 'normal_model')[xvariable], ds.sel(model_name = 'normal_model')[yvariable1], color = normal_color, width = width, align="center", label = 'Base Model')
+    if renew == True:
+        plt.bar(ds.sel(model_name = 'nonuc_renewables_model')[xvariable], ds.sel(model_name = 'nonuc_renewables_model')[yvariable1], color = renew_color, width = width, align="edge", label = 'Renewables Model')
 
     plt.xticks(rotation = 45)
     ax.legend();
@@ -498,30 +517,37 @@ def fossil_fuel_plot(ds, sci_names, xvariable, pollutants, figsize, nonuc_color,
     fig,axes = plt.subplots(2, 2, figsize=figsize, sharex = True)
     for ax, pollutant in zip(axes.flatten(), pollutants):
         width = 0.3
-        ax.bar(ds.sel(model_name = 'nonuc_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'nonuc_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = nonuc_color, width = width, align="edge", label = 'No Nuclear')
+        ax.bar(ds.sel(model_name = 'nonuc_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'nonuc_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = nonuc_color, width = 0+ width, align="edge", label = 'No Nuclear')
         if nocoal == True:
-            ax.bar(ds.sel(model_name = 'nonuc_nocoal_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'nonuc_nocoal_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = nocoal_color, width = width, align="center", label = 'No Nuclear or Coal Model')
+            ax.bar(ds.sel(model_name = 'nonuc_nocoal_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'nonuc_nocoal_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = nocoal_color, width = 1+ width, align="center", label = 'No Nuclear or Coal Model')
         if normal == True:
-            ax.bar(ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = normal_color, width = width, align="center", label = 'Base Model')
+            ax.bar(ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = normal_color, width = 2+ width, align="center", label = 'Base Model')
         if egrid == True:
             ax.bar(ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'normal_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'egrid_annual_{pollutant}_conc']/1000, color = egrid_color, width = -width, align="edge", label = 'Egrid')
         if noxlim == True:
             ax.bar(ds.sel(model_name = 'nox_lim_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'nox_lim_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = nox_lim_color, width = -width, align="edge", label = 'NOx Limited Model')
         if renew == True:
-            ax.bar(ds.sel(model_name = 'renewables_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'renewables_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = renew_color, width = -width, align="center", label = 'NOx Limited Model')
+            ax.bar(ds.sel(model_name = 'nonuc_renewables_model').sel(fueltype = ['Coal', 'NaturalGas'])[xvariable], ds.sel(model_name = 'nonuc_renewables_model').sel(fueltype = ['Coal', 'NaturalGas'])[f'model_annual_{pollutant}_conc']/1000, color = renew_color, width = 3+ width, align="edge", label = 'NOx Limited Model')
         ax.set_title(f'{sci_names[pollutant]}', fontsize = 20);
         ax.set_title(f'{sci_names[pollutant]}', fontsize = 20);
         ax.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
 
     fig.text(0.35, -0.01, f'Fuel Type', fontsize = 14, ha='center')
     fig.text(-0.01, 0.38, f'Emissions (metric tons)', fontsize = 14, ha='center', rotation='vertical')
-    custom_lines = [Line2D([0], [0], color=nonuc_color, lw=4),
-                    Line2D([0], [0], color=normal_color, lw=4),
-                   Line2D([0], [0], color=nocoal_color, lw=4),
-                   Line2D([0], [0], color=nox_lim_color, lw=4),
-                   Line2D([0], [0], color=renew_color, lw=4),
-                   Line2D([0], [0], color=egrid_color, lw=4)]
-    plt.legend(custom_lines, ['No Nuclear', 'Base Model', 'No Nuclear or Coal Model', 'NOx Limited Model', 'Renewables Model', 'Egrid Model'], bbox_to_anchor=(.95,.5),  bbox_transform=fig.transFigure)
+    if renew == True:
+        custom_lines = [Line2D([0], [0], color=nonuc_color, lw=4),
+                        Line2D([0], [0], color=normal_color, lw=4),
+                       Line2D([0], [0], color=nocoal_color, lw=4),
+                       #Line2D([0], [0], color=nox_lim_color, lw=4),
+                       Line2D([0], [0], color=renew_color, lw=4),
+                      # Line2D([0], [0], color=egrid_color, lw=4)
+                       ]
+        plt.legend(custom_lines, ['No Nuclear', 'Base', 'No Nuclear - No Coal', 'No Nuclear + Renewables'], bbox_to_anchor=(.95,.5),  bbox_transform=fig.transFigure)
+    
+   #######FINISH FIXING THESE IF STATEMENTS#############
+    
+    
+    
     plt.tight_layout()
         
 def isorropia_obs_model_plot(cdf, ds_isorropia, vmin, vmax, spacing, figsize = [8,20]):
