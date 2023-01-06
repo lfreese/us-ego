@@ -60,28 +60,45 @@ def combine_and_convert_PM_O3(O3_ds_combine, PM_ds_combine, O3_index_names,PM_in
 
     #combine our two datasets into one, with model as an index
     dsO3 = xr.concat(O3_ds_combine, pd.Index(O3_index_names, name='model_name'))
+    dsO3 *= 1e9 #convert from mol/mol to ppbv
+    dsO3.attrs['units'] = 'ppbv'
+    
     dsPM = xr.concat(PM_ds_combine, pd.Index(PM_index_names, name='model_name'))
-    ds = xr.merge([dsO3['SpeciesConc_O3'], dsPM['PM25']])
+    
+    #merge and choose surface level
+    ds = xr.merge([dsO3, dsPM])
+    ds = ds.isel(lev = 0)
+    ds = ds.rename({'SpeciesConc_O3':'O3'})
+    
+    #name dataset
+    ds.attrs['name'] = ds_final_name
+    return(ds)
+
+def combine_and_convert_O3(O3_ds_combine, O3_index_names, ds_final_name):
+    '''Combine geos chem datasets, and convert mol/mol to ppbv for O3 only'''
+
+    #combine our two datasets into one, with model as an index
+    ds = xr.concat(O3_ds_combine, pd.Index(O3_index_names, name='model_name'))
     ds = ds.isel(lev = 0)
 
-    ds[f'SpeciesConc_O3'] *= 1e9 #convert from mol/mol to ppbv
-    ds[f'SpeciesConc_O3'].attrs['units'] = 'ppbv'
-    ds = ds.rename({'SpeciesConc_O3':'O3'})
+    ds *= 1e9 #convert from mol/mol to ppbv
+    ds.attrs['units'] = 'ppbv'
+    #ds = ds.rename({'SpeciesConc_O3':'O3'})
 
     #name dataset
     ds.attrs['name'] = ds_final_name
     return(ds)
 
 def convert_gases(gas_ds, index_model_names, gas_name):
-    '''Combine geos chem datasets, and convert mol/mol to ppbv for O3 only'''
+    '''Combine geos chem datasets, and convert mol/mol to ppbv for gases only. Need to select a specific species.'''
 
     #combine our two datasets into one, with model as an index
     ds_gas = xr.concat(gas_ds, pd.Index(index_model_names, name='model_name'))
     ds_gas = ds_gas.isel(lev = 0)
 
-    ds_gas[f'SpeciesConc_{gas_name}'] *= 1e9 #convert from mol/mol to ppbv
-    ds_gas[f'SpeciesConc_{gas_name}'].attrs['units'] = 'ppbv'
-    ds_gas = ds_gas.rename({f'SpeciesConc_{gas_name}':f'{gas_name}'})
+    ds_gas*= 1e9 #convert from mol/mol to ppbv
+    ds_gas.attrs['units'] = 'ppbv'
+    #ds_gas = ds_gas.rename({f'SpeciesConc_{gas_name}':f'{gas_name}'})
 
     return(ds_gas)
 
@@ -146,19 +163,25 @@ def season_mean(ds, calendar="standard"):
     return (ds * weights).groupby("time.season").sum(dim="time")
 
 
+
 #### function to find area of a grid cell from lat/lon ####
 def find_area(ds, R = 6378.1):
     """ ds is the dataset, i is the number of longitudes to assess, j is the number of latitudes, and R is the radius of the earth in km. 
     Must have the ds['lat'] in descending order (90...-90)
-    Returns Area of Grid cell in km"""
-    
-    dy = (ds['lat_b']- ds['lat_b'].roll({'lat_b':-1}, roll_coords = False))[:-1]*2*np.pi*R/360 
+    Returns Area of Grid cell in km2"""
+    circumference = (2*np.pi)*R
+    deg_to_m = (circumference/360) 
+    ds['lon'] = ds['lon'].sortby('lon')
+    ds['lat'] = ds['lat'].sortby('lat')
+    ds['lon_b'] = ds['lon_b'].sortby('lon_b')
+    ds['lat_b'] = ds['lat_b'].sortby('lat_b')
+    dy = (ds['lat_b'].roll({'lat_b':-1}, roll_coords = False) - ds['lat_b'])[:-1]*deg_to_m
 
     dx1 = (ds['lon_b'].roll({'lon_b':-1}, roll_coords = False) - 
-           ds['lon_b'])[:-1]*2*np.pi*R*np.cos(np.deg2rad(ds['lat_b']))
+           ds['lon_b'])[:-1]*deg_to_m*np.cos(np.deg2rad(ds['lat_b']))
     
     dx2 = (ds['lon_b'].roll({'lon_b':-1}, roll_coords = False) - 
-           ds['lon_b'])[:-1]*2*np.pi*R*np.cos(np.deg2rad(ds['lat_b'].roll({'lat_b':-1}, roll_coords = False)[:-1]))
+           ds['lon_b'])[:-1]*deg_to_m*np.cos(np.deg2rad(ds['lat_b'].roll({'lat_b':-1}, roll_coords = False)[:-1]))
     
     A = .5*(dx1+dx2)*dy
     
@@ -170,7 +193,6 @@ def find_area(ds, R = 6378.1):
     A = A.transpose()
     
     return(A)
-
 
 def make_2d_grid(lon_b1, lon_b2, lon_step, lat_b1, lat_b2, lat_step):
     lon_bounds = np.arange(lon_b1, lon_b2+lon_step, lon_step)
@@ -187,6 +209,20 @@ def make_2d_grid(lon_b1, lon_b2, lon_step, lat_b1, lat_b2, lat_step):
                    )
     return(ds)
 
+# MDA8 calculation
+def calc_mda8(ds):
+    ''' Calculates the max daily 8hr average (MDA8) for hourly xarray. 
+    Adapted from Emmie Le Roy and Dan Rothenbergs calculations of mda8.'''
+    #8 hour rolling average
+    avg_8hr = ds.rolling(time = 8).mean()
+    #shift times back 8 hrs (such that rolling over 7am day of to 7am next day)
+    times = pd.to_datetime(avg_8hr.time.values) - pd.Timedelta('8H')
+    avg_8hr['time'] = times
+    #take maximum 8-hr mean per day (shifted)
+    MDA8_O3 = avg_8hr.resample(time = '1D').max(dim = 'time')
+    MDA8_O3.attrs = avg_8hr.attrs
+    
+    return(MDA8_O3)
 
 
 #bootstrap function    

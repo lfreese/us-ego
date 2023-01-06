@@ -19,6 +19,7 @@
 *.zarr
 *.nc4
 *.png
+*.zip
 raw_data
 optimization_model/good_model_inputs
 optimization_model/outputs
