@@ -32,3 +32,5 @@ model_validation/GC_ds_old.nc4
 ego_nonuclear_project/final_data
 ego_nonuclear_project/data
 ego_nonuclear_project/old_final_data
+*.tex
+*.lpk

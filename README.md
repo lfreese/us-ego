@@ -35,7 +35,7 @@ Additional notes:
 
 Notebooks for the paper comparing no nuclear, base, no nuclear + no coal, no nuclear + renewables cases.
 
-The beginning of each notebook or script has a number, most of this indicates the order in which they should likely be run. Data prep is labelled in the 0, energy modeling output evaluation is in 1-3, pollution/emissions output is 5-8, social costs 9, health impacts 10, systems analysis 11-12. Some specifics are discussed below:
+The beginning of each notebook or script has a number, most of this indicates the order in which they should likely be run. Data prep is labelled in the 0, energy modeling output evaluation is in 1-3, pollution/emissions output is 5-8, social costs 9, health impacts 10, systems analysis 11. Some specifics are discussed below:
 
 0) Data preparation. 
 
