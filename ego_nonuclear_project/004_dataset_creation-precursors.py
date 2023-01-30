@@ -44,10 +44,6 @@ all_paths = ['renew_nonuc_NA', 'normal_NA','nei_NA','nonuc_NA','nonuc_coal_NA','
 
 # # Prep NOx, SO2, VOC data
 
-##module load cdo
-##create specific file and merge each of them: 
-#for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_CH2O $file CH2O_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime CH2O*2016$month*.nc4 ../merged_data/merged_CH2O_$month.nc ; done && for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_NO $file NO_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime NO*2016$month*.nc4 ../merged_data/merged_NO_$month.nc ; done && for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_NO2 $file NO2_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime NO2*2016$month*.nc4 ../merged_data/merged_NO2_$month.nc ; done && for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_SO2 $file SO2_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime SO2*2016$month*.nc4 ../merged_data/merged_SO2_$month.nc ; done
-
 
 ds = {}
 

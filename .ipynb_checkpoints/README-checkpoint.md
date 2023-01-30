@@ -23,7 +23,9 @@ Warning: the input csv files are not included here. They are stored in our curre
 
 8. If you want to compare your data to NEI 2016 data, use NEI_validation.ipynb for a monthly validation (data from ftp://newftp.epa.gov/DMDnLoad/emissions/daily/quarterly/2016/)
 
-9. To get the data in a format readable by GEOS-Chem, with access to a slurm run sbatch opt_output_to_inventory.py. You can then run remove_nans.ipynb in order to remove any nans that appear in the .nc files to make sure they work with GEOS-Chem.
+9. To get the data in a format readable by GEOS-Chem, with access to a slurm run sbatch opt_output_to_inventory.py. You can then run remove_nans.ipynb in order to remove any nans that appear in the .nc files to make sure they work with GEOS-Chem. If you want methane data use opt_output_to_inventory-GHG_only.py, but a warning that the methane data is not reliable, and this is only to be used to show the gaps in methane data.
+
+
 
 Additional notes:
 1. mask_us_neigrid.pkl masks the US grid, and is used in the opt_output_to_inventory
@@ -40,16 +42,30 @@ Load Data is from: EIA-930 (https://www.eia.gov/realtime_grid/#/data/table?end=2
 
 Notebooks for the paper comparing no nuclear, base, no nuclear + no coal, no nuclear + renewables cases.
 
-## model_validation
+The beginning of each notebook or script has a number, most of this indicates the order in which they should likely be run. Data prep is labelled in the 0, energy modeling output evaluation is in 1-3, pollution/emissions output is 5-8, social costs 9, health impacts 10, systems analysis 11-12. Some specifics are discussed below:
 
-Validation notebooks including:
+0) Data preparation. 
 
+The first step for data preparation/cleaning is to select individual variables and merge them, using the code below:
 
-NEI_validation.ipynb for a monthly validation to compare to NEI_2016 (data from ftp://newftp.epa.gov/DMDnLoad/emissions/daily/quarterly/2016/)
+``` module load cdo
+cd Outputdir
+mkdir ../merged_data
+mkdir ../merged_data/daily_mean
+mkdir ../merged_data/hrly_summer_ozone
+```
+Ozone:
+```for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_O3 $file O3_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime O3*2016$month*.nc4 ../merged_data/merged_O3_$month.nc ; done
+```
+PM2.5
+```for file in GEOSChem.AerosolMass.2016*; do cdo -selvar,PM25 $file PM_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime PM*2016$month*.nc4 ../merged_data/merged_PM_$month.nc ; done
+```
+NO, NO2, CH2O, SO2:
+```for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_CH2O $file CH2O_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime CH2O*2016$month*.nc4 ../merged_data/merged_CH2O_$month.nc ; done && for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_NO $file NO_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime NO*2016$month*.nc4 ../merged_data/merged_NO_$month.nc ; done && for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_NO2 $file NO2_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime NO2*2016$month*.nc4 ../merged_data/merged_NO2_$month.nc ; done && for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_SO2 $file SO2_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime SO2*2016$month*.nc4 ../merged_data/merged_SO2_$month.nc ; done
+```
 
-To get the data in a format readable by GEOS-Chem, with access to a slurm run sbatch opt_output_to_inventory.py; if you want methane data use opt_output_to_inventory-GHG_only.py, but a warning that the methane data is not reliable, and this is only to be used to show the gaps in methane data.
+Following this, you can run 001_dataset_creation-daily1 (for daily PM and ozone data), 002_dataset_creation-daily2 (for daily PM and ozone data), 003_dataset_creation-hourly (for hourly PM and ozone data), and then 004_dataset_creation-precursors (for NOx, SO2, CH2O). Following this, run the 0_dataset_creation_allcode notebook (for observation comparison, health attribution). 
 
-Additional notes: test_run_opt.ipynb is the draft Julia optmization script
 
 ## Data Sources
 Sources for all raw data are listed below. The input files are modified, as many have taken tables and turned them into CSV files. 
