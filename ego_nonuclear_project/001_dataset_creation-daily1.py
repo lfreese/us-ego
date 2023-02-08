@@ -42,7 +42,7 @@ import plotting
 
 
 
-all_paths = ['renew_nonuc_NA','normal_NA','nei_NA','nonuc_NA','nonuc_coal_NA','renew_nonuc_NA','egrid_NA','epa_NA']
+all_paths = ['normal_NA','nei_NA','nonuc_NA','nonuc_coal_NA','renew_nonuc_NA','egrid_NA','epa_NA']
 
 #create our daily datasets
 for poll in ['merged_O3','merged_PM']:

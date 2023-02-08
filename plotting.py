@@ -21,7 +21,7 @@ cmap_conc = 'PuBu'
 cmap_discrete = cm.get_cmap('Paired', 3) 
 
 
-lat_lon = [-120,-70,20,50]
+lat_lon = [-120,-73,22,51]
 
 import sys
 sys.path.append('/model_validation')
@@ -90,6 +90,10 @@ def concentration_plot_seasonal(ds_seasonal, species_names, season, model_names,
      #  put colorbar at desire position
     cbar_ax2 = fig.add_axes([0.60, 0.11, 0.3, 0.01]) # [left, bottom, width, height]
     fig.colorbar(q[1], cax=cbar_ax2, orientation="horizontal")
+    
+    
+
+    
     
 def concentration_plot_seasonal_dif(ds_seasonal, species_names, seasons, mod_base, mod_delta, rows, 
                        columns, figsize, levels,
