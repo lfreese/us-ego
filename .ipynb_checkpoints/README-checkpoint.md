@@ -48,16 +48,19 @@ mkdir ../merged_data/daily_mean
 mkdir ../merged_data/hrly_summer_ozone
 ```
 Ozone:
-```for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_O3 $file O3_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime O3*2016$month*.nc4 ../merged_data/merged_O3_$month.nc ; done
+```
+for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_O3 $file O3_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime O3*2016$month*.nc4 ../merged_data/merged_O3_$month.nc ; done
 ```
 PM2.5
-```for file in GEOSChem.AerosolMass.2016*; do cdo -selvar,PM25 $file PM_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime PM*2016$month*.nc4 ../merged_data/merged_PM_$month.nc ; done
+```
+for file in GEOSChem.AerosolMass.2016*; do cdo -selvar,PM25 $file PM_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime PM*2016$month*.nc4 ../merged_data/merged_PM_$month.nc ; done
 ```
 NO, NO2, CH2O, SO2:
-```for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_CH2O $file CH2O_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime CH2O*2016$month*.nc4 ../merged_data/merged_CH2O_$month.nc ; done && for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_NO $file NO_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime NO*2016$month*.nc4 ../merged_data/merged_NO_$month.nc ; done && for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_NO2 $file NO2_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime NO2*2016$month*.nc4 ../merged_data/merged_NO2_$month.nc ; done && for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_SO2 $file SO2_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime SO2*2016$month*.nc4 ../merged_data/merged_SO2_$month.nc ; done
+```
+for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_CH2O $file CH2O_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime CH2O*2016$month*.nc4 ../merged_data/merged_CH2O_$month.nc ; done && for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_NO $file NO_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime NO*2016$month*.nc4 ../merged_data/merged_NO_$month.nc ; done && for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_NO2 $file NO2_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime NO2*2016$month*.nc4 ../merged_data/merged_NO2_$month.nc ; done && for file in GEOSChem.SpeciesConc.2016*; do cdo -selvar,SpeciesConc_SO2 $file SO2_$file; done && for month in {01,02,03,04,05,06,07,08,09,10,11,12}; do cdo mergetime SO2*2016$month*.nc4 ../merged_data/merged_SO2_$month.nc ; done
 ```
 
-Following this, you can run 001_dataset_creation-daily1 (for daily PM and ozone data), 002_dataset_creation-daily2 (for daily PM and ozone data), 003_dataset_creation-hourly (for hourly PM and ozone data), and then 004_dataset_creation-precursors (for NOx, SO2, CH2O). Following this, run the 0_dataset_creation_allcode notebook (for observation comparison, health attribution). 
+Following this, you can run 001_dataset_creation-daily1 (for daily PM and ozone data), 002_dataset_creation-daily2 (for daily PM and ozone data), 003_dataset_creation-hourly (for hourly PM and ozone data), 004_dataset_creation-precursors (for NOx, SO2, CH2O), and then 005_dataset_creation-obs_comp (for comparing to observations from IMPROVE and EPA AQS). Following this, run the 0_dataset_creation_allcode notebook (for health attribution). 
 
 
 ## Data Sources
@@ -65,6 +68,6 @@ Sources for all raw data are listed below. The input files are modified, as many
 1. Cost data: https://www.eia.gov/electricity/data/eia923/ EIA-923 with EIA-906/920 previous data 
 2. Solar Renewable CF: https://www.epa.gov/airmarkets/power-sector-modeling-platform-v515 Table 4-28 
 3. Wind Renewable CF: https://www.epa.gov/airmarkets/power-sector-modeling-platform-v515 Table 4-20
-4. Load/Demand data: https://www.eia.gov/todayinenergy/detail.php?id=27212 EIA930_BALANCE_2016 form for both Jan-Jun and Jul-Dec, selecting download data, balance data for 2016
+4. Load/Demand data: https://www.eia.gov/todayinenergy/detail.php?id=27212 EIA930_BALANCE_2016 form for both Jan-Jun and Jul-Dec, selecting download data, subregion data for 2016
 5. Capacity/Emissions factors: https://www.epa.gov/energy/emissions-generation-resource-integrated-database-egrid (historical data, 2016)
 6. Transmission Data and hourly wind and solar profiles are from: https://www.epa.gov/airmarkets/power-sector-modeling-platform-v515 NEEDS v5.16/IPM v5.16 

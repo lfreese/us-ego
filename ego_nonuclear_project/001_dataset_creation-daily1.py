@@ -45,7 +45,7 @@ import plotting
 all_paths = ['normal_NA','nei_NA','nonuc_NA','nonuc_coal_NA','renew_nonuc_NA','egrid_NA','epa_NA']
 
 #create our daily datasets
-for poll in ['merged_O3','merged_PM']:
+for poll in ['merged_NIT','merged_SO4']:
     for path in all_paths:
         ds = xr.open_mfdataset(f'/net/fs11/d0/emfreese/GCrundirs/nuclearproj/{path}/merged_data/{poll}*.nc')
         ds = ds.groupby('time.date').mean(dim = 'time')

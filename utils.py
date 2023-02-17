@@ -93,12 +93,12 @@ def convert_gases(gas_ds, index_model_names, gas_name):
     '''Combine geos chem datasets, and convert mol/mol to ppbv for gases only. Need to select a specific species.'''
 
     #combine our two datasets into one, with model as an index
-    ds_gas = xr.concat(gas_ds, pd.Index(index_model_names, name='model_name'), compat='override')
+    ds_gas = xr.concat(gas_ds, pd.Index(index_model_names, name='model_name'))
     ds_gas = ds_gas.isel(lev = 0)
 
     ds_gas*= 1e9 #convert from mol/mol to ppbv
     ds_gas.attrs['units'] = 'ppbv'
-    #ds_gas = ds_gas.rename({f'SpeciesConc_{gas_name}':f'{gas_name}'})
+    #
 
     return(ds_gas)
 
@@ -106,7 +106,7 @@ def convert_aerosol(aerosol_ds, index_model_names, aerosol_name):
     '''Combine geos chem datasets, and convert mol/mol to ppbv for O3 only'''
 
     #combine our two datasets into one, with model as an index
-    aerosol_ds = xr.concat(aerosol_ds, pd.Index(index_model_names, name='model_name'), compat='override')
+    aerosol_ds = xr.concat(aerosol_ds, pd.Index(index_model_names, name='model_name'))
     aerosol_ds = aerosol_ds.isel(lev = 0)
 
     aerosol_ds[f'AerMass{aerosol_name}'].attrs['units'] = 'ug/m3'
